@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace ShakaCallstackParser
 
         bool is_encoding_ = false;
         int index_ = 0;
+        string encoding_name_;
+        string org_name_;
 
         public Encoder(OnProgressChangedDelegate pc, OnFinishedDelegate f)
         {
@@ -51,10 +54,13 @@ namespace ShakaCallstackParser
             using (Process p = new Process())
             {
                 BackgroundWorker worker = sender as BackgroundWorker;
+                org_name_ = Path.GetFileName(arg.path);
+                encoding_name_ = "[ENC]" + org_name_;
+                
 
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i " + arg.path + " -c:a copy -c:s copy -c:v h264 -preset ultrafast zzz.mp4";
+                p.StartInfo.Arguments = "-y -i " + arg.path + " -c:a copy -c:s copy -c:v h264 -preset ultrafast " + encoding_name_;
                 p.StartInfo.WorkingDirectory = "";
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.RedirectStandardOutput = true;
@@ -103,11 +109,11 @@ namespace ShakaCallstackParser
             }
             else
             {
+                CustomRename(encoding_name_, org_name_);
                 delegate_on_finished(index_);
                 if (e.Result != null)
                 {
                 }
-                // use it on the UI thread
             }
         }
 
@@ -123,6 +129,31 @@ namespace ShakaCallstackParser
             int minute = int.Parse(time_str.Substring(3, 2));
             int second = int.Parse(time_str.Substring(6, 2));
             return second + (minute * 60) + (hour * 3600);
+        }
+
+        private static void CustomRename(string src_name, string org_name)
+        {
+            if (File.Exists(src_name))
+            {
+                string out_name = "[Done]" + org_name;
+                if (File.Exists(out_name))
+                {
+                    const int max = 1000;
+                    for (int i = 0; i < max; i++)
+                    {
+                        out_name = "[Done" + i + "]" + org_name;
+                        if (!File.Exists(out_name))
+                        {
+                            File.Move(src_name, out_name);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    File.Move(src_name, out_name);
+                }
+            }
         }
 
         class EncArgument

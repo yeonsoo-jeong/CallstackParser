@@ -21,7 +21,6 @@ namespace ShakaCallstackParser
     /// </summary>
     public partial class EncWindow : Window
     {
-        //Encoder encoder_;
         EncodeManager enc_manager_;
         List<EncListItems> result = new List<EncListItems>();
 
