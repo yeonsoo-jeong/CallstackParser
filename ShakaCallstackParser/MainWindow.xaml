@@ -13,7 +13,7 @@
         </Grid.ColumnDefinitions>
         <Button Content="Get File" HorizontalAlignment="Left" Margin="33,20,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click" RenderTransformOrigin="0.562,-0.363"/>
         <Button Content="Text Done" HorizontalAlignment="Left" Margin="33,55,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1"/>
-        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="344" Margin="33,104,0,0" VerticalAlignment="Top" Width="887" Grid.ColumnSpan="2">
+        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="344" Margin="33,104,0,0" VerticalAlignment="Top" Width="887" Grid.ColumnSpan="2" DragDrop.Drop="ListView1_OnDroped">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="numberItem" DisplayMemberBinding="{Binding numberItem}" Width="80" />
@@ -23,6 +23,7 @@
             </ListView.View>
         </ListView>
         <TextBox x:Name="TextBox1" HorizontalAlignment="Left" Height="55" Margin="140,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="780" Grid.ColumnSpan="2" AcceptsReturn="True" AcceptsTab="True" AutoWordSelection="True"/>
+        <Button x:Name="btnNext" Content="Next" Grid.Column="1" HorizontalAlignment="Left" Margin="408,20,-48,0" VerticalAlignment="Top" Width="48" Height="55" Click="btnNext_Click"/>
 
     </Grid>
 </Window>
