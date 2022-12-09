@@ -60,7 +60,7 @@ namespace ShakaCallstackParser
 
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i " + arg.path + " -c:a copy -c:s copy -c:v h264 -preset ultrafast " + encoding_name_;
+                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf 28 \"" + encoding_name_ + "\"";
                 p.StartInfo.WorkingDirectory = "";
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.RedirectStandardOutput = true;
@@ -135,13 +135,13 @@ namespace ShakaCallstackParser
         {
             if (File.Exists(src_name))
             {
-                string out_name = "[Done]" + org_name;
+                string out_name = "RE_" + org_name;
                 if (File.Exists(out_name))
                 {
                     const int max = 1000;
                     for (int i = 0; i < max; i++)
                     {
-                        out_name = "[Done" + i + "]" + org_name;
+                        out_name = "RE" + i + "_" + org_name;
                         if (!File.Exists(out_name))
                         {
                             File.Move(src_name, out_name);
