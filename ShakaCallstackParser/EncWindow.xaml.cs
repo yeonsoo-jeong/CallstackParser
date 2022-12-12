@@ -88,11 +88,11 @@ namespace ShakaCallstackParser
 
         private void EncodeFinished(int index)
         {
-            Dispatcher.Invoke(() =>
-            {
-                result[index].progress = 100;
-                ListView1.Items.Refresh();
-            });
+            //Dispatcher.Invoke(() =>
+            //{
+            //    result[index].progress = 100;
+            //    ListView1.Items.Refresh();
+            //});
         }
     }
 
