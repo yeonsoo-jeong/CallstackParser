@@ -19,6 +19,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="Note" DisplayMemberBinding="{Binding note}" Width="400" />
                 </GridView>
             </ListView.View>
         </ListView>

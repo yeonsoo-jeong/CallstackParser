@@ -33,7 +33,7 @@ namespace ShakaCallstackParser
         private void Init()
         {
             ListView1.AllowDrop = true;
-            enc_manager_ = new EncodeManager(EncodeProgressChanged, EncodeFinished);
+            enc_manager_ = new EncodeManager(EncodeProgressChanged, EncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
         }
 
         private void ListView1_OnDroped(object sender, DragEventArgs e)
@@ -52,6 +52,7 @@ namespace ShakaCallstackParser
                         item.number = num.ToString();
                         item.path = file;
                         item.progress = 0;
+                        item.note = "";
                         result.Add(item);
                         num++;
                     }
@@ -75,6 +76,33 @@ namespace ShakaCallstackParser
                 }
                 enc_manager_.Start(jobs);
             }
+        }
+
+        private void SSIMCalculateFinished(int index, int crf, double ssim)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                string strSSIM = Math.Round(ssim, 4).ToString();
+                string msg = crf.ToString() + ":" + strSSIM;
+                if (result[index].note.Length == 0)
+                {
+                    result[index].note = msg;
+                }
+                else
+                {
+                    result[index].note += ", " + msg;
+                }
+                ListView1.Items.Refresh();
+            });
+        }
+
+        private void AnalyzeFinished(int index, int crf)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                result[index].note += " => " + crf.ToString();
+                ListView1.Items.Refresh();
+            });
         }
 
         private void EncodeProgressChanged(int index, int percentage)
@@ -101,5 +129,6 @@ namespace ShakaCallstackParser
         public string number { get; set; }
         public string path { get; set; }
         public int progress { get; set; }
+        public string note { get; set; }
     }
 }

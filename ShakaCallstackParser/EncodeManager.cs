@@ -13,16 +13,28 @@ namespace ShakaCallstackParser
         public delegate void OnFinishedDelegate(int index);
         OnFinishedDelegate delegate_on_finished;
 
+        public delegate void DelegateOnSSIMCalculated(int index, int crf, double ssim);
+        DelegateOnSSIMCalculated callback_ssim_calculated;
+        public delegate void DelegateOnAnalyzeFinished(int index, int crf);
+        DelegateOnAnalyzeFinished callback_analyze_finished;
+
+        Action<int, int> test_callback_analyze_finished = (index, crf) => Console.WriteLine("dd");
+
         Encoder encoder_;
 
         int current_enc_index_ = 0;
         List<EncodeJob> enc_jobs_;
 
-        public EncodeManager(OnProgressChangedDelegate pc, OnFinishedDelegate f)
+        Analyzer analyzer_;
+
+        public EncodeManager(OnProgressChangedDelegate pc, OnFinishedDelegate f, DelegateOnSSIMCalculated sc, DelegateOnAnalyzeFinished af)
         {
             delegate_on_progress_changed = pc;
             delegate_on_finished = f;
+            callback_ssim_calculated = sc;
+            callback_analyze_finished = af;
             encoder_ = new Encoder(EncodeProgressChanged, EncodeFinished);
+            analyzer_ = new Analyzer(OnSSIMCalculated, OnAnalyzeFinished);
         }
 
         public bool Start(List<EncodeJob> jobs)
@@ -31,16 +43,11 @@ namespace ShakaCallstackParser
             current_enc_index_ = 0;
             if (jobs.Count() > 0)
             {
-                Encode();
+                analyzer_.Analyze(jobs[0].index_, jobs[0].path_);
                 return true;
             }
             
             return false;
-        }
-
-        public bool IsFinished()
-        {
-            return enc_jobs_.Count() <= current_enc_index_;
         }
 
         public string GetCurrentEncPath()
@@ -54,15 +61,18 @@ namespace ShakaCallstackParser
 
         public int GetCurrentIndex()
         {
-            return current_enc_index_;
+            if (enc_jobs_.Count() <= current_enc_index_)
+            {
+                return -1;
+            }
+            return enc_jobs_[current_enc_index_].index_;
         }
 
-        private void Encode()
+        private void Encode(int crf)
         {
             int index = GetCurrentIndex();
             string path = GetCurrentEncPath();
-            encoder_.Encode(index, path);
-            current_enc_index_++;
+            encoder_.Encode(index, path, crf);
         }
 
         private void EncodeProgressChanged(int index, int percentage)
@@ -73,10 +83,22 @@ namespace ShakaCallstackParser
         private void EncodeFinished(int index)
         {
             delegate_on_finished(index);
-            if (!IsFinished())
+            current_enc_index_++;
+            if (enc_jobs_.Count() > current_enc_index_)
             {
-                Encode();
+                analyzer_.Analyze(enc_jobs_[current_enc_index_].index_, enc_jobs_[current_enc_index_].path_);
             }
+        }
+
+        private void OnSSIMCalculated(int index, int crf, double ssim)
+        {
+            callback_ssim_calculated(index, crf, ssim);
+        }
+
+        private void OnAnalyzeFinished(int index, int crf)
+        {
+            callback_analyze_finished(index, crf);
+            Encode(crf);
         }
     }
 

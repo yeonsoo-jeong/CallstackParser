@@ -27,7 +27,8 @@ namespace ShakaCallstackParser
             delegate_on_finished = f;
         }
 
-        public bool Encode(int index, string inpPath)
+
+        public bool Encode(int index, string inpPath, int crf)
         {
             if (is_encoding_)
             {
@@ -41,7 +42,7 @@ namespace ShakaCallstackParser
             worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
             worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
 
-            EncArgument ea = new EncArgument(index, inpPath);
+            EncArgument ea = new EncArgument(index, inpPath, crf);
             worker.RunWorkerAsync(argument: ea);
 
             return true;
@@ -60,7 +61,7 @@ namespace ShakaCallstackParser
 
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf 28 \"" + encoding_name_ + "\"";
+                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
                 p.StartInfo.WorkingDirectory = "";
                 p.StartInfo.UseShellExecute = false;
                 p.StartInfo.RedirectStandardOutput = true;
@@ -158,14 +159,16 @@ namespace ShakaCallstackParser
 
         class EncArgument
         {
-            public EncArgument(int _index, string _path)
+            public EncArgument(int _index, string _path, int _crf)
             {
                 index = _index;
                 path = _path;
+                crf = _crf;
             }
 
             public int index;
             public string path;
+            public int crf;
         }
     }
 }
