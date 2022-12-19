@@ -33,7 +33,9 @@ namespace ShakaCallstackParser
         private void Init()
         {
             ListView1.AllowDrop = true;
-            enc_manager_ = new EncodeManager(EncodeProgressChanged, EncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
+            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(EncodeProgressChanged, 
+                EncodeFinished, AllEncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
+            enc_manager_ = new EncodeManager(callback);
         }
 
         private void ListView1_OnDroped(object sender, DragEventArgs e)
@@ -58,7 +60,7 @@ namespace ShakaCallstackParser
                         item.path = file;
                         item.progress = 0;
                         //item.note = "";
-                        item.note = Environment.ProcessorCount.ToString();
+                        item.note = "core=" + Environment.ProcessorCount.ToString();
                         result.Add(item);
                         num++;
                     }
@@ -83,6 +85,8 @@ namespace ShakaCallstackParser
                     jobs.Add(new EncodeJob(i, path));
                 }
                 enc_manager_.Start(jobs);
+                Btn1.Content = "Encoding";
+                Btn1.IsEnabled = false;
             }
         }
 
@@ -135,6 +139,14 @@ namespace ShakaCallstackParser
                     result[index].note = result[index].note + ", Fail[" + result_code.ToString() + "]";
                 }
                 ListView1.Items.Refresh();
+            });
+        }
+
+        private void AllEncodeFinished()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Btn1.Content = "Finished";
             });
         }
     }

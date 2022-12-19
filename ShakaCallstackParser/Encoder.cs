@@ -66,7 +66,8 @@ namespace ShakaCallstackParser
                 p.StartInfo.FileName = "ffmpeg.exe";
                 p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
                 p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.RedirectStandardError = true;
                 p.Start();

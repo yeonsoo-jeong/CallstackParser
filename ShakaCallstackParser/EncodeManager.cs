@@ -8,15 +8,29 @@ namespace ShakaCallstackParser
 {
     class EncodeManager
     {
-        public delegate void OnProgressChangedDelegate(int index, int percentage);
-        OnProgressChangedDelegate delegate_on_progress_changed;
-        public delegate void OnFinishedDelegate(int index, int result_code);
-        OnFinishedDelegate delegate_on_finished;
+        public class Callbacks
+        {
+            public delegate void OnProgressChanged(int index, int percentage);
+            public delegate void OnEncodeFinished(int index, int result_code);
+            public delegate void OnAllEncodeFinished();
+            public delegate void OnSSIMCalculated(int index, int crf, double ssim);
+            public delegate void OnAnalyzeFinished(int index, int crf);
+            public Callbacks(OnProgressChanged pc, OnEncodeFinished ef, OnAllEncodeFinished aef, OnSSIMCalculated sc, OnAnalyzeFinished af)
+            {
+                progress_changed = pc;
+                encode_finished = ef;
+                all_encode_finished = aef;
+                ssim_calculated = sc;
+                analyze_finished = af;
+            }
 
-        public delegate void DelegateOnSSIMCalculated(int index, int crf, double ssim);
-        DelegateOnSSIMCalculated callback_ssim_calculated;
-        public delegate void DelegateOnAnalyzeFinished(int index, int crf);
-        DelegateOnAnalyzeFinished callback_analyze_finished;
+            public OnProgressChanged progress_changed;
+            public OnEncodeFinished encode_finished;
+            public OnAllEncodeFinished all_encode_finished;
+            public OnSSIMCalculated ssim_calculated;
+            public OnAnalyzeFinished analyze_finished;
+        }
+        Callbacks callbacks_;
 
         Action<int, int> test_callback_analyze_finished = (index, crf) => Console.WriteLine("dd");
 
@@ -27,12 +41,9 @@ namespace ShakaCallstackParser
 
         Analyzer analyzer_;
 
-        public EncodeManager(OnProgressChangedDelegate pc, OnFinishedDelegate f, DelegateOnSSIMCalculated sc, DelegateOnAnalyzeFinished af)
+        public EncodeManager(Callbacks callback)
         {
-            delegate_on_progress_changed = pc;
-            delegate_on_finished = f;
-            callback_ssim_calculated = sc;
-            callback_analyze_finished = af;
+            callbacks_ = callback;
             encoder_ = new Encoder(EncodeProgressChanged, EncodeFinished);
             analyzer_ = new Analyzer(OnSSIMCalculated, OnAnalyzeFinished);
         }
@@ -77,27 +88,31 @@ namespace ShakaCallstackParser
 
         private void EncodeProgressChanged(int index, int percentage)
         {
-            delegate_on_progress_changed(index, percentage);
+            callbacks_.progress_changed(index, percentage);
         }
 
         private void EncodeFinished(int index, int result_code)
         {
-            delegate_on_finished(index, result_code);
+            callbacks_.encode_finished(index, result_code);
             current_enc_index_++;
             if (enc_jobs_.Count() > current_enc_index_)
             {
                 analyzer_.Analyze(enc_jobs_[current_enc_index_].index_, enc_jobs_[current_enc_index_].path_);
+            } 
+            else
+            {
+                callbacks_.all_encode_finished();
             }
         }
 
         private void OnSSIMCalculated(int index, int crf, double ssim)
         {
-            callback_ssim_calculated(index, crf, ssim);
+            callbacks_.ssim_calculated(index, crf, ssim);
         }
 
         private void OnAnalyzeFinished(int index, int crf)
         {
-            callback_analyze_finished(index, crf);
+            callbacks_.analyze_finished(index, crf);
             Encode(crf);
         }
     }
