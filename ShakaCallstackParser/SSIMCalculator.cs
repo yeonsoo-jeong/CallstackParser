@@ -13,12 +13,20 @@ namespace ShakaCallstackParser
 {
     class SSIMCalculator
     {
-        public delegate void OnFinishedDelegate(int index, int crf, double ssim);
-        OnFinishedDelegate delegate_on_finished;
-
-        public SSIMCalculator(OnFinishedDelegate f)
+        public class Callbacks
         {
-            delegate_on_finished = f;
+            public delegate void OnFinished(int index, int crf, double ssim);
+            public Callbacks(OnFinished f)
+            {
+                finished = f;
+            }
+            public OnFinished finished;
+        }
+        Callbacks callbacks_;
+
+        public SSIMCalculator(Callbacks callback)
+        {
+            callbacks_ = callback;
         }
 
         public void Calculate(int index, string path, int crf, int start_time, int duration)
@@ -79,7 +87,7 @@ namespace ShakaCallstackParser
             int index = ((CalcResult)(e.Result)).index;
             int crf = ((CalcResult)(e.Result)).crf;
             double ssim = ((CalcResult)(e.Result)).ssim;
-            delegate_on_finished(index, crf, ssim);
+            callbacks_.finished(index, crf, ssim);
         }
 
         private void OnProgressChanged(object sender, ProgressChangedEventArgs e)

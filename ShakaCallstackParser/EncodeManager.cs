@@ -44,8 +44,8 @@ namespace ShakaCallstackParser
         public EncodeManager(Callbacks callback)
         {
             callbacks_ = callback;
-            encoder_ = new Encoder(EncodeProgressChanged, EncodeFinished);
-            analyzer_ = new Analyzer(OnSSIMCalculated, OnAnalyzeFinished);
+            encoder_ = new Encoder(new Encoder.Callbacks(EncodeProgressChanged, EncodeFinished));
+            analyzer_ = new Analyzer(new Analyzer.Callbacks(OnSSIMCalculated, OnAnalyzeFinished));
         }
 
         public bool Start(List<EncodeJob> jobs)

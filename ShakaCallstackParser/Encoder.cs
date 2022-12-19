@@ -11,10 +11,20 @@ namespace ShakaCallstackParser
 {
     class Encoder
     {
-        public delegate void OnProgressChangedDelegate(int index, int percentage);
-        OnProgressChangedDelegate delegate_on_progress_changed;
-        public delegate void OnFinishedDelegate(int index, int result_code);
-        OnFinishedDelegate delegate_on_finished;
+        public class Callbacks
+        {
+            public delegate void OnProgressChanged(int index, int percentage);
+            public delegate void OnFinished(int index, int result_code);
+            public Callbacks(OnProgressChanged pc, OnFinished f)
+            {
+                progress_changed = pc;
+                finished = f;
+            }
+
+            public OnProgressChanged progress_changed;
+            public OnFinished finished;
+        }
+        Callbacks callbacks_;
 
         bool is_encoding_ = false;
         int index_ = 0;
@@ -22,12 +32,9 @@ namespace ShakaCallstackParser
         string encoding_name_;
         string org_name_;
 
-        
-
-        public Encoder(OnProgressChangedDelegate pc, OnFinishedDelegate f)
+        public Encoder(Callbacks callback)
         {
-            delegate_on_progress_changed = pc;
-            delegate_on_finished = f;
+            callbacks_ = callback;
         }
 
 
@@ -116,7 +123,7 @@ namespace ShakaCallstackParser
             else
             {
                 CustomRename(encoding_name_, org_name_);
-                delegate_on_finished(index_, result_code_);
+                callbacks_.finished(index_, result_code_);
                 if (e.Result != null)
                 {
                 }
@@ -125,7 +132,7 @@ namespace ShakaCallstackParser
 
         private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            delegate_on_progress_changed(index_, e.ProgressPercentage);
+            callbacks_.progress_changed(index_, e.ProgressPercentage);
             //MessageBox.Show(e.ProgressPercentage.ToString() + "%");
         }
 

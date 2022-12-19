@@ -14,32 +14,41 @@ namespace ShakaCallstackParser
         private const double kTargetSSIMRangeMin = 0.9869;
         private const double kTargetSSIMRangeMax = 0.9875;
 
-        
-        public delegate void DelegateOnAnalyzeFinished(int index, int crf);
-        DelegateOnAnalyzeFinished callback_analyze_finished;
-        public delegate void DelegateOnCalculated(int index, int crf, double ssim);
-        DelegateOnCalculated callback_calculated;
+        public class Callbacks
+        {
+            public delegate void OnAnalyzeFinished(int index, int crf);
+            public delegate void OnCalculated(int index, int crf, double ssim);
+
+            public Callbacks(OnCalculated c, OnAnalyzeFinished af)
+            {
+                analyze_finished = af;
+                calculated = c;
+            }
+
+            public OnAnalyzeFinished analyze_finished;
+            public OnCalculated calculated;
+        }
+        Callbacks callbacks_;
 
         List<AnalyzeJob> analyze_jobs_;
         List<ResultData> result_data_;
-        bool is_analyzing = false;
 
-        int current_analyze_index = -1;
+        bool is_analyzing_ = false;
+        int current_analyze_index_ = -1;
 
-        public Analyzer(DelegateOnCalculated func_cal, DelegateOnAnalyzeFinished func_finish)
+        public Analyzer(Callbacks callback)
         {
-            callback_analyze_finished = func_finish;
-            callback_calculated = func_cal;
+            callbacks_ = callback;
         }
 
         public bool Analyze(int index, string path)
         {
-            if (is_analyzing)
+            if (is_analyzing_)
             {
                 return false;
             }
-            is_analyzing = true;
-            current_analyze_index = 0;
+            is_analyzing_ = true;
+            current_analyze_index_ = 0;
             result_data_ = new List<ResultData>();
             analyze_jobs_ = new List<AnalyzeJob>();
 
@@ -54,7 +63,7 @@ namespace ShakaCallstackParser
 
         private int CalculateSSIM(AnalyzeJob job)
         {
-            SSIMCalculator calculator = new SSIMCalculator(OnCalcuateFinished);
+            SSIMCalculator calculator = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
             calculator.Calculate(job.index, job.path, job.crf, job.start_time, job.duration);
             return 0;
         }
@@ -62,13 +71,13 @@ namespace ShakaCallstackParser
         private void AnalyzeFinished()
         {
             analyze_jobs_.Clear();
-            current_analyze_index = -1;
-            is_analyzing = false;
+            current_analyze_index_ = -1;
+            is_analyzing_ = false;
         }
 
         private void OnCalcuateFinished(int _index, int crf, double ssim)
         {
-            callback_calculated(_index, crf, ssim);
+            callbacks_.calculated(_index, crf, ssim);
             if (ssim > 0)
             {
                 result_data_.Add(new ResultData(crf, ssim));
@@ -77,26 +86,26 @@ namespace ShakaCallstackParser
             if (IsReadySSIM(result_data_, kTargetSSIMValue))
             {
                 int index = GetMinSSIMDistanceIndex(result_data_, kTargetSSIMValue);
-                callback_analyze_finished(_index, result_data_[index].crf);
+                callbacks_.analyze_finished(_index, result_data_[index].crf);
                 AnalyzeFinished();
                 return;
             }
 
-            current_analyze_index++;
-            if (analyze_jobs_.Count() > current_analyze_index)
+            current_analyze_index_++;
+            if (analyze_jobs_.Count() > current_analyze_index_)
             {
-                CalculateSSIM(analyze_jobs_[current_analyze_index]);
+                CalculateSSIM(analyze_jobs_[current_analyze_index_]);
             }
             else
             {
                 int index = GetMinSSIMDistanceIndex(result_data_, kTargetSSIMValue);
                 if (index > 0)
                 {
-                    callback_analyze_finished(_index, result_data_[index].crf);
+                    callbacks_.analyze_finished(_index, result_data_[index].crf);
                 }
                 else
                 {
-                    callback_analyze_finished(_index, kDefaultCrfValue);
+                    callbacks_.analyze_finished(_index, kDefaultCrfValue);
                 }
                 AnalyzeFinished();
             }
