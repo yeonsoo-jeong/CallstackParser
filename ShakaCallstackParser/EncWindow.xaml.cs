@@ -40,22 +40,30 @@ namespace ShakaCallstackParser
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                result.Clear();
+                //result.Clear();
 
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length >= 1)
                 {
                     int num = 1;
+                    if (result.Count() > 0)
+                    {
+                        num = Int32.Parse(result[result.Count() - 1].number) + 1;
+                    }
+
                     foreach (string file in files)
                     {
                         EncListItems item = new EncListItems();
                         item.number = num.ToString();
                         item.path = file;
                         item.progress = 0;
-                        item.note = "";
+                        //item.note = "";
+                        item.note = Environment.ProcessorCount.ToString();
                         result.Add(item);
                         num++;
                     }
+
+                    result = result.Distinct(new EncListComparer()).ToList();
 
                     ListView1.ItemsSource = result;
                     ListView1.Items.Refresh();
@@ -114,13 +122,20 @@ namespace ShakaCallstackParser
             });
         }
 
-        private void EncodeFinished(int index)
+        private void EncodeFinished(int index, int result_code)
         {
-            //Dispatcher.Invoke(() =>
-            //{
-            //    result[index].progress = 100;
-            //    ListView1.Items.Refresh();
-            //});
+            Dispatcher.Invoke(() =>
+            {
+                if (result_code == 0)
+                {
+                    result[index].note = result[index].note + ", Success[" + result_code.ToString() + "]";
+                }
+                else
+                {
+                    result[index].note = result[index].note + ", Fail[" + result_code.ToString() + "]";
+                }
+                ListView1.Items.Refresh();
+            });
         }
     }
 
@@ -130,5 +145,23 @@ namespace ShakaCallstackParser
         public string path { get; set; }
         public int progress { get; set; }
         public string note { get; set; }
+    }
+
+    public class EncListComparer : IEqualityComparer<EncListItems>
+    {
+        public bool Equals(EncListItems x, EncListItems y)
+        {
+            return x.path == y.path;
+        }
+
+        public int GetHashCode(EncListItems obj)
+        {
+            if (obj == null)
+            {
+                return 0;
+            }
+
+            return obj.path == null ? 0 : obj.path.GetHashCode();
+        }
     }
 }

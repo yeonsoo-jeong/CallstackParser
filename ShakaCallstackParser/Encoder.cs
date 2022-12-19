@@ -13,13 +13,16 @@ namespace ShakaCallstackParser
     {
         public delegate void OnProgressChangedDelegate(int index, int percentage);
         OnProgressChangedDelegate delegate_on_progress_changed;
-        public delegate void OnFinishedDelegate(int index);
+        public delegate void OnFinishedDelegate(int index, int result_code);
         OnFinishedDelegate delegate_on_finished;
 
         bool is_encoding_ = false;
         int index_ = 0;
+        int result_code_;
         string encoding_name_;
         string org_name_;
+
+        
 
         public Encoder(OnProgressChangedDelegate pc, OnFinishedDelegate f)
         {
@@ -36,6 +39,7 @@ namespace ShakaCallstackParser
             }
             is_encoding_ = true;
             index_ = index;
+            result_code_ = -1;
             BackgroundWorker worker = new BackgroundWorker();
             worker.WorkerReportsProgress = true;
             worker.DoWork += new DoWorkEventHandler(EncodeBackground);
@@ -58,7 +62,6 @@ namespace ShakaCallstackParser
                 org_name_ = Path.GetFileName(arg.path);
                 encoding_name_ = "[ENC]" + org_name_;
                 
-
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
                 p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
@@ -94,6 +97,7 @@ namespace ShakaCallstackParser
                     System.Threading.Thread.Sleep(10);
                 }
                 p.WaitForExit();
+                result_code_ = p.ExitCode;
             }
         }
 
@@ -111,7 +115,7 @@ namespace ShakaCallstackParser
             else
             {
                 CustomRename(encoding_name_, org_name_);
-                delegate_on_finished(index_);
+                delegate_on_finished(index_, result_code_);
                 if (e.Result != null)
                 {
                 }

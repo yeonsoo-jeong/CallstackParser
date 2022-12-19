@@ -10,7 +10,7 @@ namespace ShakaCallstackParser
     {
         public delegate void OnProgressChangedDelegate(int index, int percentage);
         OnProgressChangedDelegate delegate_on_progress_changed;
-        public delegate void OnFinishedDelegate(int index);
+        public delegate void OnFinishedDelegate(int index, int result_code);
         OnFinishedDelegate delegate_on_finished;
 
         public delegate void DelegateOnSSIMCalculated(int index, int crf, double ssim);
@@ -80,9 +80,9 @@ namespace ShakaCallstackParser
             delegate_on_progress_changed(index, percentage);
         }
 
-        private void EncodeFinished(int index)
+        private void EncodeFinished(int index, int result_code)
         {
-            delegate_on_finished(index);
+            delegate_on_finished(index, result_code);
             current_enc_index_++;
             if (enc_jobs_.Count() > current_enc_index_)
             {
