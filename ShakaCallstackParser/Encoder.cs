@@ -62,7 +62,7 @@ namespace ShakaCallstackParser
         private void EncodeBackground(object sender, DoWorkEventArgs e)
         {
             EncArgument arg = (EncArgument)e.Argument;
-            e.Result = arg.index;
+            e.Result = -1.0f;
             using (Process p = new Process())
             {
                 BackgroundWorker worker = sender as BackgroundWorker;
@@ -71,7 +71,7 @@ namespace ShakaCallstackParser
                 
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
+                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
                 p.StartInfo.WorkingDirectory = "";
                 p.StartInfo.CreateNoWindow = true;
                 p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -102,6 +102,12 @@ namespace ShakaCallstackParser
                             //delegate_on_progress_changed(arg.index, percentage);
                         }
                     }
+
+                    double ssim = SSIMCalculator.ParseSSIM(readStr);
+                    if (ssim >= 0)
+                    {
+                        e.Result = ssim;
+                    }
                     System.Threading.Thread.Sleep(10);
                 }
                 p.WaitForExit();
@@ -122,11 +128,21 @@ namespace ShakaCallstackParser
             }
             else
             {
-                CustomRename(encoding_name_, org_name_);
-                callbacks_.finished(index_, result_code_);
+                double ssim = -1;
                 if (e.Result != null)
                 {
+                    Double.TryParse(e.Result.ToString(), out ssim);
                 }
+
+                {
+                    // Log
+                    string msg = "Encode Finished. name=" + org_name_ + ", ssim=" + ssim;
+                    Loger.Write(msg);
+                    Loger.Write("");
+                }
+
+                CustomRename(encoding_name_, org_name_);
+                callbacks_.finished(index_, result_code_);
             }
         }
 

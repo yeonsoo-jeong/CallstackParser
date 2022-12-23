@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,9 +53,23 @@ namespace ShakaCallstackParser
             result_data_ = new List<ResultData>();
             analyze_jobs_ = new List<AnalyzeJob>();
 
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 28, 0, 5));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 27, 0, 5));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 26, 0, 5));
+            AnalyzeTimeSelector selector = new AnalyzeTimeSelector();
+            List<AnalyzeTimeSelector.TimePair> time_pair = selector.Calculate(path);
+            {
+                // Log
+
+                string msg = Path.GetFileName(path) + " time: ";
+                for (int i = 0; i < time_pair.Count(); i++)
+                {
+                    msg += "[" + time_pair[i].start_time + " : " + time_pair[i].duration + "] ";
+                }
+                Loger.Write(msg);
+            }
+
+
+            analyze_jobs_.Add(new AnalyzeJob(index, path, 28, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, 27, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, 26, time_pair));
 
             CalculateSSIM(analyze_jobs_[0]);
 
@@ -64,7 +79,7 @@ namespace ShakaCallstackParser
         private int CalculateSSIM(AnalyzeJob job)
         {
             SSIMCalculator calculator = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
-            calculator.Calculate(job.index, job.path, job.crf, job.start_time, job.duration);
+            calculator.Calculate(job.index, job.path, job.crf, job.time_pair_list);
             return 0;
         }
 
@@ -88,6 +103,12 @@ namespace ShakaCallstackParser
                 int index = GetMinSSIMDistanceIndex(result_data_, kTargetSSIMValue);
                 callbacks_.analyze_finished(_index, result_data_[index].crf);
                 AnalyzeFinished();
+                {
+                    // Log
+                    string msg = "selected crf = " + result_data_[index].crf;
+                    Loger.Write(msg);
+                }
+                
                 return;
             }
 
@@ -108,6 +129,13 @@ namespace ShakaCallstackParser
                     callbacks_.analyze_finished(_index, kDefaultCrfValue);
                 }
                 AnalyzeFinished();
+
+                {
+                    // Log
+                    string msg = "selected crf = " + result_data_[index].crf;
+                    Loger.Write(msg);
+                    Loger.Write("");
+                }
             }
         }
 
@@ -173,20 +201,17 @@ namespace ShakaCallstackParser
 
         private class AnalyzeJob
         {
-            public AnalyzeJob(int _index, string _path, int _crf, int _start_time, int _duration)
+            public AnalyzeJob(int _index, string _path, int _crf, List<AnalyzeTimeSelector.TimePair> time_list)
             {
                 index = _index;
                 path = _path;
                 crf = _crf;
-                start_time = _start_time;
-                duration = _duration;
+                time_pair_list = time_list;
             }
             public int index;
             public string path;
             public int crf;
-            public int start_time;
-            public int duration;
-
+            public List<AnalyzeTimeSelector.TimePair> time_pair_list;
         }
 
         private class ResultData

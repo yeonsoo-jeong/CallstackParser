@@ -29,7 +29,26 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
         }
 
-        public void Calculate(int index, string path, int crf, int start_time, int duration)
+        public static double ParseSSIM(string line)
+        {
+            double ret = -1;
+            string findStr = "SSIM Mean Y:";
+            int index = line.IndexOf(findStr);
+            if (index >= 0)
+            {
+                int start = index + findStr.Length;
+                string substr = line.Substring(start);
+                var arr = substr.Split(' ');
+                double ssim;
+                if (Double.TryParse(arr[0], out ssim))
+                {
+                    ret = ssim;
+                }
+            }
+            return ret;
+        }
+
+        public void Calculate(int index, string path, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
             BackgroundWorker worker = new BackgroundWorker();
             worker.WorkerReportsProgress = true;
@@ -37,22 +56,51 @@ namespace ShakaCallstackParser
             worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
             worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
 
-            CalcArgument arg = new CalcArgument(index, path, crf, start_time, duration);
+            CalcArgument arg = new CalcArgument(index, path, crf, time_list);
             worker.RunWorkerAsync(argument: arg);
         }
 
         private void EncodeBackground(object sender, DoWorkEventArgs e)
         {
             CalcArgument arg = (CalcArgument)e.Argument;
-            CalcResult result = new CalcResult(arg.index, arg.crf, -1);
-            e.Result = result;
+            List<AnalyzeTimeSelector.TimePair> time_list = arg.time_pair_list;
 
+            double ssim = 0;
+            int count = 0;   
+            for (int i = 0; i < time_list.Count(); i++)
+            {
+                double ssim_result = CalculateSSIM(arg.path, arg.crf, time_list[i].start_time, time_list[i].duration);
+                if (ssim_result > 0)
+                {
+                    {
+                        // Log
+                        string name = Path.GetFileName(arg.path);
+                        string msg = "name=" + name + ", crf=" + arg.crf + ", start_time=" + time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + ssim_result;
+
+                        Loger.Write(msg);
+                    }
+                    
+                    ssim += ssim_result;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                ssim /= (double)count;
+            }
+
+            e.Result = new CalcResult(arg.index, arg.crf, ssim);
+        }
+
+        private double CalculateSSIM(string path, int crf, int start_time, int duration)
+        {
+            double ret = -1;
             using (Process p = new Process())
             {
-                BackgroundWorker worker = sender as BackgroundWorker;
                 p.EnableRaisingEvents = true;
                 p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -an -sn -c:v h264 -crf " + arg.crf + " -ss " + arg.start_time + " -t " + arg.duration + " -ssim 1 -f null /dev/null";
+                p.StartInfo.Arguments = "-y -i \"" + path + "\" -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
                 p.StartInfo.WorkingDirectory = "";
                 p.StartInfo.CreateNoWindow = true;
                 p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -61,25 +109,32 @@ namespace ShakaCallstackParser
                 p.Start();
 
                 string readStr = "";
-                string findStr = "SSIM Mean Y:";
+                //string findStr = "SSIM Mean Y:";
                 while ((readStr = p.StandardError.ReadLine()) != null)
                 {
-                    int index = readStr.IndexOf(findStr);
-                    if (index >= 0)
+                    double result = ParseSSIM(readStr);
+                    if (result >= 0)
                     {
-                        int start = index + findStr.Length;
-                        string substr = readStr.Substring(start);
-                        var arr = substr.Split(' ');
-                        double ssim;
-                        if (Double.TryParse(arr[0], out ssim))
-                        {
-                            ((CalcResult)(e.Result)).ssim = ssim;
-                        }
+                        ret = result;
                     }
+                    //int index = readStr.IndexOf(findStr);
+                    //if (index >= 0)
+                    //{
+                    //    int start = index + findStr.Length;
+                    //    string substr = readStr.Substring(start);
+                    //    var arr = substr.Split(' ');
+                    //    double ssim;
+                    //    if (Double.TryParse(arr[0], out ssim))
+                    //    {
+                    //        ret = ssim;
+                    //    }
+                    //}
                     System.Threading.Thread.Sleep(10);
                 }
                 p.WaitForExit();
             }
+
+            return ret;
         }
 
         private void OnFinished(object sender, RunWorkerCompletedEventArgs e)
@@ -97,20 +152,18 @@ namespace ShakaCallstackParser
 
         private class CalcArgument
         {
-            public CalcArgument(int _index, string _path, int _crf, int _start_time, int _duration)
+            public CalcArgument(int _index, string _path, int _crf, List<AnalyzeTimeSelector.TimePair> _time_list)
             {
                 index = _index;
                 path = _path;
                 crf = _crf;
-                start_time = _start_time;
-                duration = _duration;
+                time_pair_list = _time_list;
             }
 
             public int index;
             public string path;
             public int crf;
-            public int start_time;
-            public int duration;
+            public List<AnalyzeTimeSelector.TimePair> time_pair_list;
         }
 
         private class CalcResult

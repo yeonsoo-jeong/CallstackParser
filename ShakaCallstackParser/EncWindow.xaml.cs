@@ -21,6 +21,7 @@ namespace ShakaCallstackParser
     /// </summary>
     public partial class EncWindow : Window
     {
+        public static EncWindow pThis;
         EncodeManager enc_manager_;
         List<EncListItems> result = new List<EncListItems>();
 
@@ -28,6 +29,7 @@ namespace ShakaCallstackParser
         {
             InitializeComponent();
             Init();
+            pThis = this;
         }
 
         private void Init()
@@ -148,6 +150,15 @@ namespace ShakaCallstackParser
             {
                 Btn1.Content = "Finished";
             });
+        }
+
+        public void TestMessageBox(string msg)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show(msg);
+            });
+                
         }
     }
 

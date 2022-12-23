@@ -55,6 +55,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AnalyzeTimeSelector.cs" />
+    <Compile Include="Loger.cs" />
     <Compile Include="SSIMCalculator.cs" />
     <Page Include="EncWindow.xaml">
       <SubType>Designer</SubType>
