@@ -79,6 +79,13 @@ namespace ShakaCallstackParser
             return enc_jobs_[current_enc_index_].index_;
         }
 
+        public void OnWindowClosed()
+        {
+            encoder_.OnWindowClosed();
+            analyzer_.OnWindowClosed();
+
+        }
+
         private void Encode(int crf)
         {
             int index = GetCurrentIndex();

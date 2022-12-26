@@ -26,6 +26,8 @@ namespace ShakaCallstackParser
         }
         Callbacks callbacks_;
 
+        Process enc_process_ = null;
+
         bool is_encoding_ = false;
         int index_ = 0;
         int result_code_;
@@ -59,30 +61,47 @@ namespace ShakaCallstackParser
             return true;
         }
 
+        public void OnWindowClosed()
+        {
+            if (enc_process_ != null)
+            {
+                if (!enc_process_.HasExited)
+                {
+                    try
+                    {
+                        enc_process_.Kill();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
         private void EncodeBackground(object sender, DoWorkEventArgs e)
         {
             EncArgument arg = (EncArgument)e.Argument;
             e.Result = -1.0f;
-            using (Process p = new Process())
+            using (enc_process_ = new Process())
             {
                 BackgroundWorker worker = sender as BackgroundWorker;
                 org_name_ = Path.GetFileName(arg.path);
                 encoding_name_ = "[ENC]" + org_name_;
-                
-                p.EnableRaisingEvents = true;
-                p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
-                p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.RedirectStandardError = true;
-                p.Start();
+
+                enc_process_.EnableRaisingEvents = true;
+                enc_process_.StartInfo.FileName = "ffmpeg.exe";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
+                enc_process_.StartInfo.WorkingDirectory = "";
+                enc_process_.StartInfo.CreateNoWindow = true;
+                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                enc_process_.StartInfo.RedirectStandardOutput = true;
+                enc_process_.StartInfo.RedirectStandardError = true;
+                enc_process_.Start();
 
                 string readStr = "";
                 int duration_seconds = 0;
 
-                while ((readStr = p.StandardError.ReadLine()) != null)
+                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                 {
                     if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
                     {
@@ -110,8 +129,9 @@ namespace ShakaCallstackParser
                     }
                     System.Threading.Thread.Sleep(10);
                 }
-                p.WaitForExit();
-                result_code_ = p.ExitCode;
+
+                enc_process_.WaitForExit();
+                result_code_ = enc_process_.ExitCode;
             }
         }
 

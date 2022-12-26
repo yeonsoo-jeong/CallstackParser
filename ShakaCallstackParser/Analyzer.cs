@@ -31,6 +31,8 @@ namespace ShakaCallstackParser
         }
         Callbacks callbacks_;
 
+        SSIMCalculator ssim_calculator_;
+
         List<AnalyzeJob> analyze_jobs_;
         List<ResultData> result_data_;
 
@@ -40,6 +42,7 @@ namespace ShakaCallstackParser
         public Analyzer(Callbacks callback)
         {
             callbacks_ = callback;
+            ssim_calculator_ = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
         }
 
         public bool Analyze(int index, string path)
@@ -76,10 +79,14 @@ namespace ShakaCallstackParser
             return true;
         }
 
+        public void OnWindowClosed()
+        {
+            ssim_calculator_.OnWindowClosed();
+        }
+
         private int CalculateSSIM(AnalyzeJob job)
         {
-            SSIMCalculator calculator = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
-            calculator.Calculate(job.index, job.path, job.crf, job.time_pair_list);
+            ssim_calculator_.Calculate(job.index, job.path, job.crf, job.time_pair_list);
             return 0;
         }
 

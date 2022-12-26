@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ShakaCallstackParser"
         mc:Ignorable="d"
-        Title="EncWindow" Height="450" Width="800">
+        Title="EncWindow" Height="450" Width="800"
+        Activated="Window_Activated" Closed="Window_Closed">
     <Grid>
         <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="726" Grid.ColumnSpan="2" DragDrop.Drop="ListView1_OnDroped">
             <ListView.View>

@@ -23,6 +23,8 @@ namespace ShakaCallstackParser
             public OnFinished finished;
         }
         Callbacks callbacks_;
+        Process enc_process_ = null;
+        bool is_window_closed = false;
 
         public SSIMCalculator(Callbacks callback)
         {
@@ -60,6 +62,24 @@ namespace ShakaCallstackParser
             worker.RunWorkerAsync(argument: arg);
         }
 
+        public void OnWindowClosed()
+        {
+            is_window_closed = true;
+            if (enc_process_ != null)
+            {
+                if (!enc_process_.HasExited)
+                {
+                    try
+                    {
+                        enc_process_.Kill();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
         private void EncodeBackground(object sender, DoWorkEventArgs e)
         {
             CalcArgument arg = (CalcArgument)e.Argument;
@@ -69,6 +89,10 @@ namespace ShakaCallstackParser
             int count = 0;   
             for (int i = 0; i < time_list.Count(); i++)
             {
+                if (is_window_closed == true)
+                {
+                    return;
+                }
                 double ssim_result = CalculateSSIM(arg.path, arg.crf, time_list[i].start_time, time_list[i].duration);
                 if (ssim_result > 0)
                 {
@@ -96,42 +120,30 @@ namespace ShakaCallstackParser
         private double CalculateSSIM(string path, int crf, int start_time, int duration)
         {
             double ret = -1;
-            using (Process p = new Process())
+            using (enc_process_ = new Process())
             {
-                p.EnableRaisingEvents = true;
-                p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + path + "\" -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
-                p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.RedirectStandardError = true;
-                p.Start();
+                enc_process_.EnableRaisingEvents = true;
+                enc_process_.StartInfo.FileName = "ffmpeg.exe";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + path + "\" -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
+                enc_process_.StartInfo.WorkingDirectory = "";
+                enc_process_.StartInfo.CreateNoWindow = true;
+                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                enc_process_.StartInfo.RedirectStandardOutput = true;
+                enc_process_.StartInfo.RedirectStandardError = true;
+                enc_process_.Start();
 
                 string readStr = "";
                 //string findStr = "SSIM Mean Y:";
-                while ((readStr = p.StandardError.ReadLine()) != null)
+                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                 {
                     double result = ParseSSIM(readStr);
                     if (result >= 0)
                     {
                         ret = result;
                     }
-                    //int index = readStr.IndexOf(findStr);
-                    //if (index >= 0)
-                    //{
-                    //    int start = index + findStr.Length;
-                    //    string substr = readStr.Substring(start);
-                    //    var arr = substr.Split(' ');
-                    //    double ssim;
-                    //    if (Double.TryParse(arr[0], out ssim))
-                    //    {
-                    //        ret = ssim;
-                    //    }
-                    //}
                     System.Threading.Thread.Sleep(10);
                 }
-                p.WaitForExit();
+                enc_process_.WaitForExit();
             }
 
             return ret;

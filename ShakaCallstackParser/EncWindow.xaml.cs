@@ -160,6 +160,16 @@ namespace ShakaCallstackParser
             });
                 
         }
+
+        private void Window_Activated(object sender, EventArgs e)
+        {
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            enc_manager_.OnWindowClosed();
+            //MessageBox.Show("Closed");
+        }
     }
 
     public class EncListItems
