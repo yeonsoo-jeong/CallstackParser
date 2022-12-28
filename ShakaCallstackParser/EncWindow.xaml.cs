@@ -49,7 +49,7 @@ namespace ShakaCallstackParser
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length >= 1)
                 {
-                    int num = 1;
+                    int num = 0;
                     if (result.Count() > 0)
                     {
                         num = Int32.Parse(result[result.Count() - 1].number) + 1;

@@ -9,9 +9,20 @@
         Activated="Window_Activated" Closed="Window_Closed">
     <Grid>
         <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="726" Grid.ColumnSpan="2" DragDrop.Drop="ListView1_OnDroped">
+            <ListView.Resources>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.Resources>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Num" DisplayMemberBinding="{Binding number}" Width="50" />
+                    <GridViewColumn Header="Num" Width="50">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock TextAlignment="Center" Text="{Binding number}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
                     <GridViewColumn Header="Progress" Width="120" >
                         <GridViewColumn.CellTemplate>
