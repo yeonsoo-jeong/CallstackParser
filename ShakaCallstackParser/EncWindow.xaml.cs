@@ -21,7 +21,6 @@ namespace ShakaCallstackParser
     /// </summary>
     public partial class EncWindow : Window
     {
-        public static EncWindow pThis;
         EncodeManager enc_manager_;
         List<EncListItems> result = new List<EncListItems>();
 
@@ -29,7 +28,6 @@ namespace ShakaCallstackParser
         {
             InitializeComponent();
             Init();
-            pThis = this;
         }
 
         private void Init()
@@ -38,6 +36,15 @@ namespace ShakaCallstackParser
             EncodeManager.Callbacks callback = new EncodeManager.Callbacks(EncodeProgressChanged, 
                 EncodeFinished, AllEncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
             enc_manager_ = new EncodeManager(callback);
+        }
+
+        private void ReorderEncListNumber()
+        {
+            for (int i = 0; i < result.Count; i++)
+            {
+                result[i].number = i.ToString();
+            }
+            ListView1.Items.Refresh();
         }
 
         private void ListView1_OnDroped(object sender, DragEventArgs e)
@@ -49,25 +56,18 @@ namespace ShakaCallstackParser
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length >= 1)
                 {
-                    int num = 0;
-                    if (result.Count() > 0)
-                    {
-                        num = Int32.Parse(result[result.Count() - 1].number) + 1;
-                    }
-
                     foreach (string file in files)
                     {
                         EncListItems item = new EncListItems();
-                        item.number = num.ToString();
                         item.path = file;
                         item.progress = 0;
                         //item.note = "";
                         item.note = "core=" + Environment.ProcessorCount.ToString();
                         result.Add(item);
-                        num++;
                     }
 
                     result = result.Distinct(new EncListComparer()).ToList();
+                    ReorderEncListNumber();
 
                     ListView1.ItemsSource = result;
                     ListView1.Items.Refresh();
@@ -89,6 +89,7 @@ namespace ShakaCallstackParser
                 enc_manager_.Start(jobs);
                 Btn1.Content = "Encoding";
                 Btn1.IsEnabled = false;
+                ListView1.IsEnabled = false;
             }
         }
 
@@ -149,16 +150,8 @@ namespace ShakaCallstackParser
             Dispatcher.Invoke(() =>
             {
                 Btn1.Content = "Finished";
+                ListView1.IsEnabled = true;
             });
-        }
-
-        public void TestMessageBox(string msg)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                MessageBox.Show(msg);
-            });
-                
         }
 
         private void Window_Activated(object sender, EventArgs e)
@@ -169,6 +162,17 @@ namespace ShakaCallstackParser
         {
             enc_manager_.OnWindowClosed();
             //MessageBox.Show("Closed");
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Loger.Write("e.RoutedEvent.Name=" + e.RoutedEvent.Name);
+            foreach (EncListItems item in ListView1.SelectedItems)
+            {
+                result.Remove(item);
+            }
+            ReorderEncListNumber();
+            ListView1.Items.Refresh();
         }
     }
 

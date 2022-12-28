@@ -63,18 +63,21 @@ namespace ShakaCallstackParser
 
         public void OnWindowClosed()
         {
-            if (enc_process_ != null)
+            try
             {
-                if (!enc_process_.HasExited)
+                if (enc_process_ != null)
                 {
-                    try
+                    if (!enc_process_.HasExited)
                     {
                         enc_process_.Kill();
                     }
-                    catch
-                    {
-                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Loger.Write("Exceltion: OnWindowClosed()");
+                Loger.Write(e.ToString());
+                Loger.Write("");
             }
         }
 

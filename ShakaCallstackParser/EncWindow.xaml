@@ -14,24 +14,31 @@
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 </Style>
             </ListView.Resources>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Delete" Click="MenuItem_Click"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Num" Width="50">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock TextAlignment="Center" Text="{Binding number}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
-                    <GridViewColumn Header="Progress" Width="120" >
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"/>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Note" DisplayMemberBinding="{Binding note}" Width="400" />
+                    <GridView.Columns>
+                        <GridViewColumn Header="Num" Width="50">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextAlignment="Center" Text="{Binding number}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
+                        <GridViewColumn Header="Progress" Width="120" >
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="Note" DisplayMemberBinding="{Binding note}" Width="400" />
+                    </GridView.Columns>
                 </GridView>
             </ListView.View>
         </ListView>
