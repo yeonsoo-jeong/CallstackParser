@@ -194,6 +194,12 @@ namespace ShakaCallstackParser
             EncWindow ew = new EncWindow();
             ew.Show();
         }
+
+        private void btnViewer_Click(object sender, RoutedEventArgs e)
+        {
+            VideoDataViewWindow vw = new VideoDataViewWindow();
+            vw.Show();
+        }
     }
 
 

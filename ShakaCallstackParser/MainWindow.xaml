@@ -24,6 +24,7 @@
         </ListView>
         <TextBox x:Name="TextBox1" HorizontalAlignment="Left" Height="55" Margin="140,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="780" Grid.ColumnSpan="2" AcceptsReturn="True" AcceptsTab="True" AutoWordSelection="True"/>
         <Button x:Name="btnNext" Content="Next" Grid.Column="1" HorizontalAlignment="Left" Margin="408,20,-48,0" VerticalAlignment="Top" Width="48" Height="55" Click="btnNext_Click"/>
+        <Button x:Name="btnViewer" Content="btnViewer" Grid.Column="1" HorizontalAlignment="Left" Margin="408,104,-61,0" VerticalAlignment="Top" Width="61" Height="51" Click="btnViewer_Click"/>
 
     </Grid>
 </Window>
