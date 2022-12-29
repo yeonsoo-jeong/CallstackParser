@@ -90,6 +90,7 @@ namespace ShakaCallstackParser
                 Btn1.Content = "Encoding";
                 Btn1.IsEnabled = false;
                 ListView1.IsEnabled = false;
+                BtnRemoveDone.IsEnabled = false;
             }
         }
 
@@ -136,10 +137,12 @@ namespace ShakaCallstackParser
                 if (result_code == 0)
                 {
                     result[index].note = result[index].note + ", Success[" + result_code.ToString() + "]";
+                    result[index].status = EncListItems.Status.success;
                 }
                 else
                 {
                     result[index].note = result[index].note + ", Fail[" + result_code.ToString() + "]";
+                    result[index].status = EncListItems.Status.fail;
                 }
                 ListView1.Items.Refresh();
             });
@@ -151,6 +154,7 @@ namespace ShakaCallstackParser
             {
                 Btn1.Content = "Finished";
                 ListView1.IsEnabled = true;
+                BtnRemoveDone.IsEnabled = true;
             });
         }
 
@@ -174,14 +178,39 @@ namespace ShakaCallstackParser
             ReorderEncListNumber();
             ListView1.Items.Refresh();
         }
+
+        private void BtnRemoveDone_Click(object sender, RoutedEventArgs e)
+        {
+            for (int i = result.Count - 1; i >= 0; i--)
+            {
+                if (result[i].status == EncListItems.Status.success)
+                {
+                    result.RemoveAt(i);
+                }
+            }
+            ReorderEncListNumber();
+            ListView1.Items.Refresh();
+        }
     }
 
     public class EncListItems
     {
+        public enum Status
+        {
+            none,
+            success,
+            fail
+        }
+        public EncListItems()
+        {
+            status = Status.none;
+        }
+
         public string number { get; set; }
         public string path { get; set; }
         public int progress { get; set; }
         public string note { get; set; }
+        public Status status { get; set; }
     }
 
     public class EncListComparer : IEqualityComparer<EncListItems>

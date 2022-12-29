@@ -43,6 +43,7 @@
             </ListView.View>
         </ListView>
         <Button x:Name="Btn1" Content="Button" HorizontalAlignment="Left" Margin="683,34,0,0" VerticalAlignment="Top" Width="75" Click="Btn1_Click"/>
+        <Button x:Name="BtnRemoveDone" Content="Rm" HorizontalAlignment="Left" Margin="593,34,0,0" VerticalAlignment="Top" Width="43" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
 
     </Grid>
 </Window>
