@@ -65,18 +65,21 @@ namespace ShakaCallstackParser
         public void OnWindowClosed()
         {
             is_window_closed = true;
-            if (enc_process_ != null)
+            try
             {
-                if (!enc_process_.HasExited)
+                if (enc_process_ != null)
                 {
-                    try
+                    if (!enc_process_.HasExited)
                     {
                         enc_process_.Kill();
                     }
-                    catch
-                    {
-                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Loger.Write("Exceltion: SSIMCalculator.cs OnWindowClosed()");
+                Loger.Write(e.ToString());
+                Loger.Write("");
             }
         }
 

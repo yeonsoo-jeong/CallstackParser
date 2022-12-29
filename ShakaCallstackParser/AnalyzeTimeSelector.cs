@@ -48,8 +48,6 @@ namespace ShakaCallstackParser
                     {
                         string substr = readStr.Substring(12, 11);
                         duration_seconds = CalculateSeconds(substr);
-
-                        try { p.Kill(); } catch {}
                         break;
                     }
                     System.Threading.Thread.Sleep(10);

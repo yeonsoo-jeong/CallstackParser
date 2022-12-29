@@ -75,7 +75,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write("Exceltion: OnWindowClosed()");
+                Loger.Write("Exceltion: Encoder.cs OnWindowClosed()");
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
