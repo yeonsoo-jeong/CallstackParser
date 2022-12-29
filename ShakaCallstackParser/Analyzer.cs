@@ -37,6 +37,7 @@ namespace ShakaCallstackParser
         List<ResultData> result_data_;
 
         bool is_analyzing_ = false;
+        bool is_canceled_ = false;
         int current_analyze_index_ = -1;
 
         public Analyzer(Callbacks callback)
@@ -52,6 +53,7 @@ namespace ShakaCallstackParser
                 return false;
             }
             is_analyzing_ = true;
+            is_canceled_ = false;
             current_analyze_index_ = 0;
             result_data_ = new List<ResultData>();
             analyze_jobs_ = new List<AnalyzeJob>();
@@ -79,8 +81,17 @@ namespace ShakaCallstackParser
             return true;
         }
 
+        public void OnEncodeCanceled()
+        {
+            is_analyzing_ = false;
+            is_canceled_ = true;
+            ssim_calculator_.OnEncodeCanceled();
+        }
+
         public void OnWindowClosed()
         {
+            is_analyzing_ = false;
+            is_canceled_ = true;
             ssim_calculator_.OnWindowClosed();
         }
 
@@ -99,6 +110,11 @@ namespace ShakaCallstackParser
 
         private void OnCalcuateFinished(int _index, int crf, double ssim)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
+
             callbacks_.calculated(_index, crf, ssim);
             if (ssim > 0)
             {
@@ -139,7 +155,15 @@ namespace ShakaCallstackParser
 
                 {
                     // Log
-                    string msg = "selected crf = " + result_data_[index].crf;
+                    string msg = "selected crf = ";
+                    if (index > 0)
+                    {
+                         msg += result_data_[index].crf;
+                    } 
+                    else
+                    {
+                        msg += kDefaultCrfValue;
+                    }
                     Loger.Write(msg);
                     Loger.Write("");
                 }

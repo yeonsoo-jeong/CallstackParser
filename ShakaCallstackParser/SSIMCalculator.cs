@@ -24,7 +24,7 @@ namespace ShakaCallstackParser
         }
         Callbacks callbacks_;
         Process enc_process_ = null;
-        bool is_window_closed = false;
+        bool is_canceled_ = false;
 
         public SSIMCalculator(Callbacks callback)
         {
@@ -52,8 +52,10 @@ namespace ShakaCallstackParser
 
         public void Calculate(int index, string path, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
+            is_canceled_ = false;
             BackgroundWorker worker = new BackgroundWorker();
             worker.WorkerReportsProgress = true;
+            worker.WorkerSupportsCancellation = true;
             worker.DoWork += new DoWorkEventHandler(EncodeBackground);
             worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
             worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
@@ -62,9 +64,30 @@ namespace ShakaCallstackParser
             worker.RunWorkerAsync(argument: arg);
         }
 
+        public void OnEncodeCanceled()
+        {
+            is_canceled_ = true;
+            try
+            {
+                if (enc_process_ != null)
+                {
+                    if (!enc_process_.HasExited)
+                    {
+                        enc_process_.Kill();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Loger.Write("Exceltion: SSIMCalculator.cs OnEncodeCanceled()");
+                Loger.Write(e.ToString());
+                Loger.Write("");
+            }
+        }
+
         public void OnWindowClosed()
         {
-            is_window_closed = true;
+            is_canceled_ = true;
             try
             {
                 if (enc_process_ != null)
@@ -92,7 +115,7 @@ namespace ShakaCallstackParser
             int count = 0;   
             for (int i = 0; i < time_list.Count(); i++)
             {
-                if (is_window_closed == true)
+                if (is_canceled_)
                 {
                     return;
                 }
@@ -154,6 +177,11 @@ namespace ShakaCallstackParser
 
         private void OnFinished(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
+
             int index = ((CalcResult)(e.Result)).index;
             int crf = ((CalcResult)(e.Result)).crf;
             double ssim = ((CalcResult)(e.Result)).ssim;

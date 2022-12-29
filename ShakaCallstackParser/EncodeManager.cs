@@ -41,6 +41,8 @@ namespace ShakaCallstackParser
 
         Analyzer analyzer_;
 
+        bool is_canceled_ = false;
+
         public EncodeManager(Callbacks callback)
         {
             callbacks_ = callback;
@@ -50,6 +52,7 @@ namespace ShakaCallstackParser
 
         public bool Start(List<EncodeJob> jobs)
         {
+            is_canceled_ = false;
             enc_jobs_ = jobs;
             current_enc_index_ = 0;
             if (jobs.Count() > 0)
@@ -79,8 +82,16 @@ namespace ShakaCallstackParser
             return enc_jobs_[current_enc_index_].index_;
         }
 
+        public void OnEncodeCanceled()
+        {
+            is_canceled_ = true;
+            encoder_.OnEncodeCanceled();
+            analyzer_.OnEncodeCanceled();
+        }
+
         public void OnWindowClosed()
         {
+            is_canceled_ = true;
             encoder_.OnWindowClosed();
             analyzer_.OnWindowClosed();
 
@@ -95,11 +106,19 @@ namespace ShakaCallstackParser
 
         private void EncodeProgressChanged(int index, int percentage)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
             callbacks_.progress_changed(index, percentage);
         }
 
         private void EncodeFinished(int index, int result_code)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
             callbacks_.encode_finished(index, result_code);
             current_enc_index_++;
             if (enc_jobs_.Count() > current_enc_index_)
@@ -114,11 +133,19 @@ namespace ShakaCallstackParser
 
         private void OnSSIMCalculated(int index, int crf, double ssim)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
             callbacks_.ssim_calculated(index, crf, ssim);
         }
 
         private void OnAnalyzeFinished(int index, int crf)
         {
+            if (is_canceled_)
+            {
+                return;
+            }
             callbacks_.analyze_finished(index, crf);
             Encode(crf);
         }

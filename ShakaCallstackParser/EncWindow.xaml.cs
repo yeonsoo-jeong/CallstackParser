@@ -60,8 +60,6 @@ namespace ShakaCallstackParser
                     {
                         EncListItems item = new EncListItems();
                         item.path = file;
-                        item.progress = 0;
-                        //item.note = "";
                         item.note = "core=" + Environment.ProcessorCount.ToString();
                         result.Add(item);
                     }
@@ -75,22 +73,80 @@ namespace ShakaCallstackParser
             }
         }
 
+        private void TempWriteResult()
+        {
+            for (int i = 0; i < result.Count; i++)
+            {
+                Loger.Write("result[" + i + "]: index, number, path=" + i + ", " + result[i].number + ", " + result[i].path);
+            }
+            Loger.Write("");
+        }
+
         private void Btn1_Click(object sender, RoutedEventArgs e)
         {
-            if (ListView1.Items.Count > 0)
+            const string str_encoding = "Encode";
+            const string str_cancel = "Cancel";
+            if (Btn1.Content.ToString() == str_encoding)
             {
-                int count = ListView1.Items.Count;
-                List<EncodeJob> jobs = new List<EncodeJob>();
-                for (int i = 0; i < count; i++)
+                if (ListView1.Items.Count > 0)
                 {
-                    string path = ((EncListItems)ListView1.Items[i]).path;
-                    jobs.Add(new EncodeJob(i, path));
+                    Btn1.IsEnabled = false;
+
+                    List<EncodeJob> jobs = new List<EncodeJob>();
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        if (result[i].status != EncListItems.Status.success)
+                        {
+                            if (result[i].status == EncListItems.Status.none)
+                            {
+                                // for cancel & restart scenario
+                                result[i].note = "";
+                                result[i].progress = 0;
+                            }
+                            string path = ((EncListItems)ListView1.Items[i]).path;
+                            jobs.Add(new EncodeJob(i, path));
+                        }
+                    }
+                    enc_manager_.Start(jobs);
+                    Btn1.Content = str_cancel;
+                    ListView1.IsEnabled = false;
+                    BtnRemoveDone.IsEnabled = false;
+                    ListView1.Items.Refresh();
+
+                    Task.Delay(1000).ContinueWith(_ =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            Btn1.IsEnabled = true;
+                        });
+                    });
                 }
-                enc_manager_.Start(jobs);
-                Btn1.Content = "Encoding";
+                else
+                {
+                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
+                }
+            }
+            else if (Btn1.Content.ToString() == str_cancel)
+            {
                 Btn1.IsEnabled = false;
-                ListView1.IsEnabled = false;
-                BtnRemoveDone.IsEnabled = false;
+
+                enc_manager_.OnEncodeCanceled();
+                Btn1.Content = str_encoding;
+                ListView1.IsEnabled = true;
+                BtnRemoveDone.IsEnabled = true;
+
+                Task.Delay(1000).ContinueWith(_ =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        Btn1.IsEnabled = true;
+                    });
+                });
+            }
+            else
+            {
+                // Unexpected Scenario
+                Loger.Write("EncWindow.xaml.cs : Btn1_Click : Unexpected Scenario");
             }
         }
 
@@ -152,7 +208,7 @@ namespace ShakaCallstackParser
         {
             Dispatcher.Invoke(() =>
             {
-                Btn1.Content = "Finished";
+                //Btn1.Content = "Finished";
                 ListView1.IsEnabled = true;
                 BtnRemoveDone.IsEnabled = true;
             });
@@ -201,8 +257,10 @@ namespace ShakaCallstackParser
             success,
             fail
         }
+
         public EncListItems()
         {
+            progress = 0;
             status = Status.none;
         }
 

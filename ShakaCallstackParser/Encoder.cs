@@ -29,10 +29,12 @@ namespace ShakaCallstackParser
         Process enc_process_ = null;
 
         bool is_encoding_ = false;
+        bool is_canceled_ = false;
         int index_ = 0;
         int result_code_;
         string encoding_name_;
         string org_name_;
+        
 
         public Encoder(Callbacks callback)
         {
@@ -47,6 +49,7 @@ namespace ShakaCallstackParser
                 return false;
             }
             is_encoding_ = true;
+            is_canceled_ = false;
             index_ = index;
             result_code_ = -1;
             BackgroundWorker worker = new BackgroundWorker();
@@ -61,8 +64,30 @@ namespace ShakaCallstackParser
             return true;
         }
 
+        public void OnEncodeCanceled()
+        {
+            is_canceled_ = true;
+            try
+            {
+                if (enc_process_ != null)
+                {
+                    if (!enc_process_.HasExited)
+                    {
+                        enc_process_.Kill();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Loger.Write("Exceltion: Encoder.cs OnEncodeCanceled()");
+                Loger.Write(e.ToString());
+                Loger.Write("");
+            }
+        }
+
         public void OnWindowClosed()
         {
+            is_canceled_ = true;
             try
             {
                 if (enc_process_ != null)
@@ -141,6 +166,11 @@ namespace ShakaCallstackParser
         private void OnFinished(object sender, RunWorkerCompletedEventArgs e)
         {
             is_encoding_ = false;
+            if (is_canceled_)
+            {
+                return; 
+            }
+
             if (e.Error != null)
             {
                 // handle the error
