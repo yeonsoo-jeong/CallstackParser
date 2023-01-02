@@ -46,7 +46,7 @@ namespace ShakaCallstackParser
             ssim_calculator_ = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
         }
 
-        public bool Analyze(int index, string path)
+        public bool Analyze(int index, string path, int thread_num)
         {
             if (is_analyzing_)
             {
@@ -72,9 +72,9 @@ namespace ShakaCallstackParser
             }
 
 
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 28, time_pair));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 27, time_pair));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, 26, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 28, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 27, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 26, time_pair));
 
             CalculateSSIM(analyze_jobs_[0]);
 
@@ -97,7 +97,7 @@ namespace ShakaCallstackParser
 
         private int CalculateSSIM(AnalyzeJob job)
         {
-            ssim_calculator_.Calculate(job.index, job.path, job.crf, job.time_pair_list);
+            ssim_calculator_.Calculate(job.index, job.path, job.thread_num, job.crf, job.time_pair_list);
             return 0;
         }
 
@@ -232,15 +232,17 @@ namespace ShakaCallstackParser
 
         private class AnalyzeJob
         {
-            public AnalyzeJob(int _index, string _path, int _crf, List<AnalyzeTimeSelector.TimePair> time_list)
+            public AnalyzeJob(int _index, string _path, int _thread_num, int _crf, List<AnalyzeTimeSelector.TimePair> time_list)
             {
                 index = _index;
                 path = _path;
+                thread_num = _thread_num;
                 crf = _crf;
                 time_pair_list = time_list;
             }
             public int index;
             public string path;
+            public int thread_num;
             public int crf;
             public List<AnalyzeTimeSelector.TimePair> time_pair_list;
         }

@@ -42,7 +42,7 @@ namespace ShakaCallstackParser
         }
 
 
-        public bool Encode(int index, string inpPath, int crf)
+        public bool Encode(int index, string inpPath, int thread_num, int crf)
         {
             if (is_encoding_)
             {
@@ -58,7 +58,7 @@ namespace ShakaCallstackParser
             worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
             worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
 
-            EncArgument ea = new EncArgument(index, inpPath, crf);
+            EncArgument ea = new EncArgument(index, inpPath, thread_num, crf);
             worker.RunWorkerAsync(argument: ea);
 
             return true;
@@ -118,7 +118,7 @@ namespace ShakaCallstackParser
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -threads " + arg.thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
                 enc_process_.StartInfo.WorkingDirectory = "";
                 enc_process_.StartInfo.CreateNoWindow = true;
                 enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -240,15 +240,17 @@ namespace ShakaCallstackParser
 
         class EncArgument
         {
-            public EncArgument(int _index, string _path, int _crf)
+            public EncArgument(int _index, string _path, int _thread_num, int _crf)
             {
                 index = _index;
                 path = _path;
                 crf = _crf;
+                thread_num = _thread_num;
             }
 
             public int index;
             public string path;
+            public int thread_num;
             public int crf;
         }
     }

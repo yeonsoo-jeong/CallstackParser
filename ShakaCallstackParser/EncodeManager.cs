@@ -50,6 +50,18 @@ namespace ShakaCallstackParser
             analyzer_ = new Analyzer(new Analyzer.Callbacks(OnSSIMCalculated, OnAnalyzeFinished));
         }
 
+        public static int GetCoreNumFromCpuUsage(string cpu_usage)
+        {
+            if (cpu_usage == "Half")
+            {
+                return Environment.ProcessorCount / 2;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
         public bool Start(List<EncodeJob> jobs)
         {
             is_canceled_ = false;
@@ -57,11 +69,20 @@ namespace ShakaCallstackParser
             current_enc_index_ = 0;
             if (jobs.Count() > 0)
             {
-                analyzer_.Analyze(jobs[0].index_, jobs[0].path_);
+                analyzer_.Analyze(jobs[0].index_, jobs[0].path_, jobs[0].thread_num_);
                 return true;
             }
             
             return false;
+        }
+
+        public int GetCurrentEncThreads()
+        {
+            if (enc_jobs_.Count() <= current_enc_index_)
+            {
+                return 0;
+            }
+            return enc_jobs_[current_enc_index_].thread_num_;
         }
 
         public string GetCurrentEncPath()
@@ -101,7 +122,8 @@ namespace ShakaCallstackParser
         {
             int index = GetCurrentIndex();
             string path = GetCurrentEncPath();
-            encoder_.Encode(index, path, crf);
+            int thread_num = GetCurrentEncThreads();
+            encoder_.Encode(index, path, thread_num, crf);
         }
 
         private void EncodeProgressChanged(int index, int percentage)
@@ -123,8 +145,8 @@ namespace ShakaCallstackParser
             current_enc_index_++;
             if (enc_jobs_.Count() > current_enc_index_)
             {
-                analyzer_.Analyze(enc_jobs_[current_enc_index_].index_, enc_jobs_[current_enc_index_].path_);
-            } 
+                analyzer_.Analyze(enc_jobs_[current_enc_index_].index_, enc_jobs_[current_enc_index_].path_, enc_jobs_[current_enc_index_].thread_num_);
+            }
             else
             {
                 callbacks_.all_encode_finished();
@@ -155,11 +177,13 @@ namespace ShakaCallstackParser
     {
         public int index_;
         public string path_;
+        public int thread_num_;
 
-        public EncodeJob(int index, string path)
+        public EncodeJob(int index, string path, int thread_num)
         {
             index_ = index;
             path_ = path;
+            thread_num_ = thread_num;
         }
     }
 }

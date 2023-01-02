@@ -24,6 +24,9 @@ namespace ShakaCallstackParser
         EncodeManager enc_manager_;
         List<EncListItems> result = new List<EncListItems>();
 
+        const string kBtnLabelEncode = "Encode";
+        const string kBtnLabelCancel = "Cancel";
+
         public EncWindow()
         {
             InitializeComponent();
@@ -61,12 +64,12 @@ namespace ShakaCallstackParser
                         EncListItems item = new EncListItems();
                         item.path = file;
                         item.note = "core=" + Environment.ProcessorCount.ToString();
-                        item.speed = new List<string>()
+                        item.cpu_usage = new List<string>()
                         {
                             "Full",
                             "Half"
                         };
-                        item.speed_selected = "Full";
+                        item.cpu_usage_selected = "Full";
                         result.Add(item);
                     }
 
@@ -83,7 +86,7 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < result.Count; i++)
             {
-                Loger.Write("result[" + i + "]: index, number, combo, path=" + i + ", " + result[i].number + ", " + result[i].speed_selected + ", " + result[i].path);
+                Loger.Write("result[" + i + "]: index, number, combo, path=" + i + ", " + result[i].number + ", " + result[i].cpu_usage_selected + ", " + result[i].path);
             }
             Loger.Write("");
         }
@@ -92,9 +95,7 @@ namespace ShakaCallstackParser
         {
             TempWriteResult();
 
-            const string str_encoding = "Encode";
-            const string str_cancel = "Cancel";
-            if (Btn1.Content.ToString() == str_encoding)
+            if (Btn1.Content.ToString() == kBtnLabelEncode)
             {
                 if (ListView1.Items.Count > 0)
                 {
@@ -110,14 +111,16 @@ namespace ShakaCallstackParser
                                 // for cancel & restart scenario
                                 result[i].note = "";
                                 result[i].progress = 0;
-                                
                             }
-                            string path = ((EncListItems)ListView1.Items[i]).path;
-                            jobs.Add(new EncodeJob(i, path));
+
+                            //string path = ((EncListItems)ListView1.Items[i]).path;
+                            //jobs.Add(new EncodeJob(i, path));
+                            jobs.Add(new EncodeJob(i, result[i].path, EncodeManager.GetCoreNumFromCpuUsage(result[i].cpu_usage_selected)));
+                            
                         }
                     }
                     enc_manager_.Start(jobs);
-                    Btn1.Content = str_cancel;
+                    Btn1.Content = kBtnLabelCancel;
                     ListView1.IsEnabled = false;
                     BtnRemoveDone.IsEnabled = false;
                     ListView1.Items.Refresh();
@@ -132,15 +135,15 @@ namespace ShakaCallstackParser
                 }
                 else
                 {
-                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
+                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다."); 
                 }
             }
-            else if (Btn1.Content.ToString() == str_cancel)
+            else if (Btn1.Content.ToString() == kBtnLabelCancel)
             {
                 Btn1.IsEnabled = false;
 
                 enc_manager_.OnEncodeCanceled();
-                Btn1.Content = str_encoding;
+                Btn1.Content = kBtnLabelEncode;
                 ListView1.IsEnabled = true;
                 BtnRemoveDone.IsEnabled = true;
 
@@ -217,7 +220,7 @@ namespace ShakaCallstackParser
         {
             Dispatcher.Invoke(() =>
             {
-                //Btn1.Content = "Finished";
+                Btn1.Content = kBtnLabelEncode;
                 ListView1.IsEnabled = true;
                 BtnRemoveDone.IsEnabled = true;
             });
@@ -277,9 +280,9 @@ namespace ShakaCallstackParser
         public string path { get; set; }
         public int progress { get; set; }
 
-        public List<string> speed { get; set; }
+        public List<string> cpu_usage { get; set; }
 
-        public string speed_selected { get; set; }
+        public string cpu_usage_selected { get; set; }
 
         public string note { get; set; }
         public Status status { get; set; }

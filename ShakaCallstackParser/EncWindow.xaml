@@ -41,7 +41,7 @@
                             <GridViewColumn.CellTemplate>
                                 <!--<DataTemplate DataType="wpf:SpeedComboBoxEntry">-->
                                 <DataTemplate>
-                                    <ComboBox x:Name="ComboSpeed" ItemsSource="{Binding speed}" SelectedItem="{Binding speed_selected}" Width="90"/>
+                                    <ComboBox x:Name="ComboSpeed" ItemsSource="{Binding cpu_usage}" SelectedItem="{Binding cpu_usage_selected}" Width="90"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
