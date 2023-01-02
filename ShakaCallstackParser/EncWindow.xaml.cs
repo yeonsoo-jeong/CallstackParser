@@ -61,6 +61,12 @@ namespace ShakaCallstackParser
                         EncListItems item = new EncListItems();
                         item.path = file;
                         item.note = "core=" + Environment.ProcessorCount.ToString();
+                        item.speed = new List<string>()
+                        {
+                            "Full",
+                            "Half"
+                        };
+                        item.speed_selected = "Full";
                         result.Add(item);
                     }
 
@@ -77,13 +83,15 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < result.Count; i++)
             {
-                Loger.Write("result[" + i + "]: index, number, path=" + i + ", " + result[i].number + ", " + result[i].path);
+                Loger.Write("result[" + i + "]: index, number, combo, path=" + i + ", " + result[i].number + ", " + result[i].speed_selected + ", " + result[i].path);
             }
             Loger.Write("");
         }
 
         private void Btn1_Click(object sender, RoutedEventArgs e)
         {
+            TempWriteResult();
+
             const string str_encoding = "Encode";
             const string str_cancel = "Cancel";
             if (Btn1.Content.ToString() == str_encoding)
@@ -102,6 +110,7 @@ namespace ShakaCallstackParser
                                 // for cancel & restart scenario
                                 result[i].note = "";
                                 result[i].progress = 0;
+                                
                             }
                             string path = ((EncListItems)ListView1.Items[i]).path;
                             jobs.Add(new EncodeJob(i, path));
@@ -267,6 +276,11 @@ namespace ShakaCallstackParser
         public string number { get; set; }
         public string path { get; set; }
         public int progress { get; set; }
+
+        public List<string> speed { get; set; }
+
+        public string speed_selected { get; set; }
+
         public string note { get; set; }
         public Status status { get; set; }
     }
@@ -288,4 +302,18 @@ namespace ShakaCallstackParser
             return obj.path == null ? 0 : obj.path.GetHashCode();
         }
     }
+
+    //public class SpeedComboBoxEntry
+    //{
+    //    private static readonly List<string> speed;
+
+    //    static SpeedComboBoxEntry()
+    //    {
+    //        speed = new List<string>();
+    //        speed.Add("full");
+    //        speed.Add("half");
+    //    }
+
+    //    public IEnumerable<string> SpeedSource => speed;
+    //}
 }
