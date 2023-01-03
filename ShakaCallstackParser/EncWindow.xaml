@@ -8,7 +8,7 @@
         Title="EncWindow" Height="450" Width="800"
         Activated="Window_Activated" Closed="Window_Closed">
     <Grid>
-        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="726" Grid.ColumnSpan="2" DragDrop.Drop="ListView1_OnDroped">
+        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="726" Grid.ColumnSpan="2" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />

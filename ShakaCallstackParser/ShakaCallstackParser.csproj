@@ -56,6 +56,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AnalyzeTimeSelector.cs" />
+    <Compile Include="EncItemManager.cs" />
     <Compile Include="Loger.cs" />
     <Compile Include="SSIMCalculator.cs" />
     <Compile Include="VDVParser.cs" />
