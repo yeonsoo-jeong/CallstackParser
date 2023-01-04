@@ -34,7 +34,6 @@ namespace ShakaCallstackParser
         SSIMCalculator ssim_calculator_;
 
         List<AnalyzeJob> analyze_jobs_;
-        List<ResultData> result_data_;
 
         bool is_analyzing_ = false;
         bool is_canceled_ = false;
@@ -55,7 +54,6 @@ namespace ShakaCallstackParser
             is_analyzing_ = true;
             is_canceled_ = false;
             current_analyze_index_ = 0;
-            result_data_ = new List<ResultData>();
             analyze_jobs_ = new List<AnalyzeJob>();
 
             AnalyzeTimeSelector selector = new AnalyzeTimeSelector();
@@ -71,7 +69,7 @@ namespace ShakaCallstackParser
                 Loger.Write(msg);
             }
 
-
+            // Should be descending order!
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 28, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 27, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 26, time_pair));
@@ -116,22 +114,15 @@ namespace ShakaCallstackParser
             }
 
             callbacks_.calculated(_index, crf, ssim);
-            if (ssim > 0)
+            if (IsValidSSIM(ssim))
             {
-                result_data_.Add(new ResultData(crf, ssim));
-            }
-
-            if (IsReadySSIM(result_data_, kTargetSSIMValue))
-            {
-                int index = GetMinSSIMDistanceIndex(result_data_, kTargetSSIMValue);
-                callbacks_.analyze_finished(_index, result_data_[index].crf);
+                callbacks_.analyze_finished(_index, crf);
                 AnalyzeFinished();
                 {
                     // Log
-                    string msg = "selected crf = " + result_data_[index].crf;
+                    string msg = "selected crf = " + crf;
                     Loger.Write(msg);
                 }
-                
                 return;
             }
 
@@ -142,92 +133,20 @@ namespace ShakaCallstackParser
             }
             else
             {
-                int index = GetMinSSIMDistanceIndex(result_data_, kTargetSSIMValue);
-                if (index > 0)
-                {
-                    callbacks_.analyze_finished(_index, result_data_[index].crf);
-                }
-                else
-                {
-                    callbacks_.analyze_finished(_index, kDefaultCrfValue);
-                }
+                callbacks_.analyze_finished(_index, crf);
                 AnalyzeFinished();
-
                 {
                     // Log
-                    string msg = "selected crf = ";
-                    if (index > 0)
-                    {
-                         msg += result_data_[index].crf;
-                    } 
-                    else
-                    {
-                        msg += kDefaultCrfValue;
-                    }
+                    string msg = "selected crf = " + crf;
                     Loger.Write(msg);
-                    Loger.Write("");
                 }
             }
         }
 
         private bool IsValidSSIM(double ssim)
         {
-            return ssim >= kTargetSSIMRangeMin && ssim <= kTargetSSIMRangeMax;
-        }
-
-        private bool IsReadySSIM(List<ResultData> data, double target)
-        {
-            if (data.Count() < 1)
-            {
-                return false;
-            }
-
-            if (data.Count() == 1)
-            {
-                return IsValidSSIM(data[0].ssim);
-            }
-
-            for (int i = 0; i < data.Count() - 1; i++)
-            {
-                if (IsValidSSIM(data[i].ssim))
-                {
-                    return true;
-                }
-                if (IsValidSSIM(data[i+1].ssim))
-                {
-                    return true;
-                }
-                double diff1 = data[i].ssim - target;
-                double diff2 = data[i + 1].ssim - target;
-                int sign1 = Math.Sign(diff1);
-                int sign2 = Math.Sign(diff2);
-                if (sign1 == 0 || sign2 == 0)
-                {
-                    // impossible scenario
-                    return true;
-                }
-                if (sign1 != sign2)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private int GetMinSSIMDistanceIndex(List<ResultData> data, double target)
-        {
-            int index = -1;
-            double min_diff = double.MinValue;
-            for (int i = 0; i < data.Count(); i++)
-            {
-                double diff = Math.Abs(data[i].ssim - target);
-                if (diff >= min_diff)
-                {
-                    index = i;
-                }
-            }
-            return index;
+            //return ssim >= kTargetSSIMRangeMin && ssim <= kTargetSSIMRangeMax;
+            return ssim >= kTargetSSIMRangeMin;
         }
 
         private class AnalyzeJob
@@ -245,17 +164,6 @@ namespace ShakaCallstackParser
             public int thread_num;
             public int crf;
             public List<AnalyzeTimeSelector.TimePair> time_pair_list;
-        }
-
-        private class ResultData
-        {
-            public ResultData(int _crf, double _ssim)
-            {
-                crf = _crf;
-                ssim = _ssim;
-            }
-            public int crf;
-            public double ssim;
         }
     }
 }
