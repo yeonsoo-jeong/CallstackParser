@@ -11,6 +11,11 @@ namespace ShakaCallstackParser
 {
     class Encoder
     {
+        const string TAG = "Encoder.cs : ";
+        const string kEncodingPrefix = "[ENC]";
+        const string kEncSuccessPrefix = "RE_";
+        const string kEncOversizePrefix = "ORG_";
+
         public class Callbacks
         {
             public delegate void OnProgressChanged(int index, int percentage);
@@ -34,6 +39,8 @@ namespace ShakaCallstackParser
         int result_code_;
         string encoding_name_;
         string org_name_;
+        string org_path_;
+
         
 
         public Encoder(Callbacks callback)
@@ -79,7 +86,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write("Exceltion: Encoder.cs OnEncodeCanceled()");
+                Loger.Write(TAG + "OnEncodeCanceled : Exception:");
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
@@ -100,7 +107,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write("Exceltion: Encoder.cs OnWindowClosed()");
+                Loger.Write(TAG + "OnWindowClosed : Exception:");
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
@@ -113,8 +120,9 @@ namespace ShakaCallstackParser
             using (enc_process_ = new Process())
             {
                 BackgroundWorker worker = sender as BackgroundWorker;
+                org_path_ = arg.path;
                 org_name_ = Path.GetFileName(arg.path);
-                encoding_name_ = "[ENC]" + org_name_;
+                encoding_name_ = kEncodingPrefix + org_name_;
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
@@ -174,10 +182,22 @@ namespace ShakaCallstackParser
             if (e.Error != null)
             {
                 // handle the error
+                {
+                    // Log
+                    string msg = TAG + "OnFinished : e.Error";
+                    Loger.Write(msg);
+                    Loger.Write("");
+                }
             }
             else if (e.Cancelled)
             {
                 // handle cancellation
+                {
+                    // Log
+                    string msg = TAG + "OnFinished : e.Cancelled";
+                    Loger.Write(msg);
+                    Loger.Write("");
+                }
             }
             else
             {
@@ -189,12 +209,12 @@ namespace ShakaCallstackParser
 
                 {
                     // Log
-                    string msg = "Encode Finished. name=" + org_name_ + ", ssim=" + ssim;
+                    string msg = TAG + "OnFinished : Encode Finished. name=" + org_name_ + ", ssim=" + ssim;
                     Loger.Write(msg);
                     Loger.Write("");
                 }
 
-                CustomRename(encoding_name_, org_name_);
+                CustomRename(org_path_, org_name_, encoding_name_);
                 callbacks_.finished(index_, result_code_);
             }
         }
@@ -213,27 +233,51 @@ namespace ShakaCallstackParser
             return second + (minute * 60) + (hour * 3600);
         }
 
-        private static void CustomRename(string src_name, string org_name)
+        private static void CustomRename(string inp_path, string inp_name, string enc_name)
         {
-            if (File.Exists(src_name))
+            if (File.Exists(enc_name))
             {
-                string out_name = "RE_" + org_name;
+                if (File.Exists(inp_path))
+                {
+                    FileInfo info = new FileInfo(inp_path);
+                    long inp_size = info.Length;
+                    info = new FileInfo(enc_name);
+                    long enc_size = info.Length;
+                    if (enc_size > inp_size)
+                    {
+                        string temp_name = kEncOversizePrefix + inp_name;
+                        File.Copy(inp_path, temp_name);
+                        File.Delete(enc_name);
+                        return;
+                    }
+                }
+
+                string out_name = kEncSuccessPrefix + inp_name;
                 if (File.Exists(out_name))
                 {
-                    const int max = 1000;
+                    const int max = 10000;
                     for (int i = 0; i < max; i++)
                     {
-                        out_name = "RE" + i + "_" + org_name;
+                        out_name = kEncSuccessPrefix + i + "_" + inp_name;
                         if (!File.Exists(out_name))
                         {
-                            File.Move(src_name, out_name);
+                            File.Move(enc_name, out_name);
                             break;
                         }
                     }
                 }
                 else
                 {
-                    File.Move(src_name, out_name);
+                    File.Move(enc_name, out_name);
+                }
+            } 
+            else
+            {
+                {
+                    // Log
+                    string msg = TAG + "CustomRename : Encoding result file is not exist. name=" + enc_name;
+                    Loger.Write(msg);
+                    Loger.Write("");
                 }
             }
         }
