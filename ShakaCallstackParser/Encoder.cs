@@ -12,7 +12,7 @@ namespace ShakaCallstackParser
     class Encoder
     {
         const string TAG = "Encoder.cs : ";
-        const string kEncodingPrefix = "[ENC]";
+        const string kEncodingPrefix = "[Temp]";
         const string kEncSuccessPrefix = "RE_";
         const string kEncOversizePrefix = "ORG_";
 
@@ -90,6 +90,10 @@ namespace ShakaCallstackParser
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
+            finally
+            {
+                EncodingFileManager.DeleteAllTempFiles();
+            }
         }
 
         public void OnWindowClosed()
@@ -111,6 +115,10 @@ namespace ShakaCallstackParser
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
+            finally
+            {
+                EncodingFileManager.DeleteAllTempFiles();
+            }
         }
 
         private void EncodeBackground(object sender, DoWorkEventArgs e)
@@ -123,6 +131,8 @@ namespace ShakaCallstackParser
                 org_path_ = arg.path;
                 org_name_ = Path.GetFileName(arg.path);
                 encoding_name_ = kEncodingPrefix + org_name_;
+
+                EncodingFileManager.EncodingStarted(encoding_name_);
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
@@ -248,6 +258,7 @@ namespace ShakaCallstackParser
                         string temp_name = kEncOversizePrefix + inp_name;
                         File.Copy(inp_path, temp_name);
                         File.Delete(enc_name);
+                        EncodingFileManager.EncodingFinished(enc_name);
                         return;
                     }
                 }
@@ -262,6 +273,7 @@ namespace ShakaCallstackParser
                         if (!File.Exists(out_name))
                         {
                             File.Move(enc_name, out_name);
+                            EncodingFileManager.EncodingFinished(enc_name);
                             break;
                         }
                     }
@@ -269,6 +281,7 @@ namespace ShakaCallstackParser
                 else
                 {
                     File.Move(enc_name, out_name);
+                    EncodingFileManager.EncodingFinished(enc_name);
                 }
             } 
             else

@@ -13,6 +13,8 @@ namespace ShakaCallstackParser
 {
     class SSIMCalculator
     {
+        const string TAG = "SSIMCalculator.cs : ";
+
         public class Callbacks
         {
             public delegate void OnFinished(int index, int crf, double ssim);
@@ -79,7 +81,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write("Exceltion: SSIMCalculator.cs OnEncodeCanceled()");
+                Loger.Write(TAG + "OnEncodeCanceled : Exception:");
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }
@@ -100,7 +102,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write("Exceltion: SSIMCalculator.cs OnWindowClosed()");
+                Loger.Write(TAG + "OnWindowClosed : Exception:");
                 Loger.Write(e.ToString());
                 Loger.Write("");
             }

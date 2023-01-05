@@ -39,6 +39,8 @@ namespace ShakaCallstackParser
                 EncodeFinished, AllEncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
             enc_manager_ = new EncodeManager(callback);
             enc_item_manager_ = new EncItemManager();
+
+            EncodingFileManager.DeleteAllTempFiles();
         }
 
         private void ListView1_OnDroped(object sender, DragEventArgs e)
@@ -77,7 +79,7 @@ namespace ShakaCallstackParser
                 }
                 else
                 {
-                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다."); 
+                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
                 }
             }
             else if (Btn1.Content.ToString() == kBtnLabelCancel)
@@ -229,6 +231,15 @@ namespace ShakaCallstackParser
         {
             enc_item_manager_.RemoveFinishedItems();
             ListView1.Items.Refresh();
+        }
+
+        private void BtnOpenDestPath_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
+            if (dialog.ShowDialog(this).GetValueOrDefault())
+            {
+                TextDestPath.Text = dialog.SelectedPath;
+            }
         }
     }
 }
