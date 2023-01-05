@@ -91,7 +91,6 @@ namespace ShakaCallstackParser
                 {
                     EncListItems item = new EncListItems();
                     item.path = file;
-                    item.note = "core=" + Environment.ProcessorCount.ToString();
                     item.cpu_usage = new List<string>()
                         {
                             "Full",
@@ -128,6 +127,7 @@ namespace ShakaCallstackParser
         {
             progress = 0;
             status = Status.none;
+            note = "";
         }
 
         public string number { get; set; }

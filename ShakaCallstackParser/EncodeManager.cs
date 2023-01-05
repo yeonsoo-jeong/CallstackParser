@@ -38,6 +38,7 @@ namespace ShakaCallstackParser
 
         int current_enc_index_ = 0;
         List<EncodeJob> enc_jobs_;
+        string out_directory_;
 
         Analyzer analyzer_;
 
@@ -62,10 +63,11 @@ namespace ShakaCallstackParser
             }
         }
 
-        public bool Start(List<EncodeJob> jobs)
+        public bool Start(List<EncodeJob> jobs, string out_directory)
         {
             is_canceled_ = false;
             enc_jobs_ = jobs;
+            out_directory_ = out_directory;
             current_enc_index_ = 0;
             if (jobs.Count() > 0)
             {
@@ -123,7 +125,7 @@ namespace ShakaCallstackParser
             int index = GetCurrentIndex();
             string path = GetCurrentEncPath();
             int thread_num = GetCurrentEncThreads();
-            encoder_.Encode(index, path, thread_num, crf);
+            encoder_.Encode(index, path, out_directory_, thread_num, crf);
         }
 
         private void EncodeProgressChanged(int index, int percentage)

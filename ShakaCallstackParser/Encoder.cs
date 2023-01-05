@@ -37,7 +37,7 @@ namespace ShakaCallstackParser
         bool is_canceled_ = false;
         int index_ = 0;
         int result_code_;
-        string encoding_name_;
+        string encoding_path_;
         string org_name_;
         string org_path_;
 
@@ -49,7 +49,7 @@ namespace ShakaCallstackParser
         }
 
 
-        public bool Encode(int index, string inpPath, int thread_num, int crf)
+        public bool Encode(int index, string inpPath, string out_directory, int thread_num, int crf)
         {
             if (is_encoding_)
             {
@@ -65,7 +65,7 @@ namespace ShakaCallstackParser
             worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
             worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
 
-            EncArgument ea = new EncArgument(index, inpPath, thread_num, crf);
+            EncArgument ea = new EncArgument(index, inpPath, out_directory, thread_num, crf);
             worker.RunWorkerAsync(argument: ea);
 
             return true;
@@ -130,13 +130,13 @@ namespace ShakaCallstackParser
                 BackgroundWorker worker = sender as BackgroundWorker;
                 org_path_ = arg.path;
                 org_name_ = Path.GetFileName(arg.path);
-                encoding_name_ = kEncodingPrefix + org_name_;
+                encoding_path_ = arg.out_directory + "\\" + kEncodingPrefix + org_name_;
 
-                EncodingFileManager.EncodingStarted(encoding_name_);
+                EncodingFileManager.EncodingStarted(encoding_path_);
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -threads " + arg.thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_name_ + "\"";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -threads " + arg.thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_path_ + "\"";
                 enc_process_.StartInfo.WorkingDirectory = "";
                 enc_process_.StartInfo.CreateNoWindow = true;
                 enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -224,7 +224,7 @@ namespace ShakaCallstackParser
                     Loger.Write("");
                 }
 
-                CustomRename(org_path_, org_name_, encoding_name_);
+                CustomRename(org_path_, org_name_, encoding_path_);
                 callbacks_.finished(index_, result_code_);
             }
         }
@@ -243,52 +243,53 @@ namespace ShakaCallstackParser
             return second + (minute * 60) + (hour * 3600);
         }
 
-        private static void CustomRename(string inp_path, string inp_name, string enc_name)
+        private static void CustomRename(string inp_path, string inp_name, string enc_path)
         {
-            if (File.Exists(enc_name))
+            if (File.Exists(enc_path))
             {
+                string base_directory = Path.GetDirectoryName(enc_path) + "\\";
                 if (File.Exists(inp_path))
                 {
                     FileInfo info = new FileInfo(inp_path);
                     long inp_size = info.Length;
-                    info = new FileInfo(enc_name);
+                    info = new FileInfo(enc_path);
                     long enc_size = info.Length;
                     if (enc_size > inp_size)
                     {
-                        string temp_name = kEncOversizePrefix + inp_name;
-                        File.Copy(inp_path, temp_name);
-                        File.Delete(enc_name);
-                        EncodingFileManager.EncodingFinished(enc_name);
+                        string oversize_out_name = base_directory + kEncOversizePrefix + inp_name;
+                        File.Copy(inp_path, oversize_out_name);
+                        File.Delete(enc_path);
+                        EncodingFileManager.EncodingFinished(enc_path);
                         return;
                     }
                 }
 
-                string out_name = kEncSuccessPrefix + inp_name;
+                string out_name = base_directory + kEncSuccessPrefix + inp_name;
                 if (File.Exists(out_name))
                 {
                     const int max = 10000;
                     for (int i = 0; i < max; i++)
                     {
-                        out_name = kEncSuccessPrefix + i + "_" + inp_name;
+                        out_name = base_directory + kEncSuccessPrefix + i + "_" + inp_name;
                         if (!File.Exists(out_name))
                         {
-                            File.Move(enc_name, out_name);
-                            EncodingFileManager.EncodingFinished(enc_name);
+                            File.Move(enc_path, out_name);
+                            EncodingFileManager.EncodingFinished(enc_path);
                             break;
                         }
                     }
                 }
                 else
                 {
-                    File.Move(enc_name, out_name);
-                    EncodingFileManager.EncodingFinished(enc_name);
+                    File.Move(enc_path, out_name);
+                    EncodingFileManager.EncodingFinished(enc_path);
                 }
             } 
             else
             {
                 {
                     // Log
-                    string msg = TAG + "CustomRename : Encoding result file is not exist. name=" + enc_name;
+                    string msg = TAG + "CustomRename : Encoding result file is not exist. name=" + enc_path;
                     Loger.Write(msg);
                     Loger.Write("");
                 }
@@ -297,16 +298,18 @@ namespace ShakaCallstackParser
 
         class EncArgument
         {
-            public EncArgument(int _index, string _path, int _thread_num, int _crf)
+            public EncArgument(int _index, string _path, string _out_directory, int _thread_num, int _crf)
             {
                 index = _index;
                 path = _path;
+                out_directory = _out_directory;
                 crf = _crf;
                 thread_num = _thread_num;
             }
 
             public int index;
             public string path;
+            public string out_directory;
             public int thread_num;
             public int crf;
         }

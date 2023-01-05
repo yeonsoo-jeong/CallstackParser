@@ -62,6 +62,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AnalyzeTimeSelector.cs" />
+    <Compile Include="ConfigManager.cs" />
     <Compile Include="EncItemManager.cs" />
     <Compile Include="EncodingFileManager.cs" />
     <Compile Include="Loger.cs" />

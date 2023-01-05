@@ -35,10 +35,12 @@ namespace ShakaCallstackParser
 
         private void Init()
         {
-            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(EncodeProgressChanged, 
+            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(EncodeProgressChanged,
                 EncodeFinished, AllEncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
             enc_manager_ = new EncodeManager(callback);
             enc_item_manager_ = new EncItemManager();
+
+            TextBoxDestPath.Text = ConfigManager.GetDestPath();
 
             EncodingFileManager.DeleteAllTempFiles();
         }
@@ -67,11 +69,11 @@ namespace ShakaCallstackParser
             Loger.Write("");
         }
 
-        private void Btn1_Click(object sender, RoutedEventArgs e)
+        private void BtnEncodeCancel_Click(object sender, RoutedEventArgs e)
         {
             TempWriteResult();
 
-            if (Btn1.Content.ToString() == kBtnLabelEncode)
+            if (BtnEncodeCancel.Content.ToString() == kBtnLabelEncode)
             {
                 if (enc_item_manager_.GetToEncodeItemsNum() > 0)
                 {
@@ -82,53 +84,55 @@ namespace ShakaCallstackParser
                     MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
                 }
             }
-            else if (Btn1.Content.ToString() == kBtnLabelCancel)
+            else if (BtnEncodeCancel.Content.ToString() == kBtnLabelCancel)
             {
                 Cancel();
             }
             else
             {
                 // Unexpected Scenario
-                Loger.Write("EncWindow.xaml.cs : Btn1_Click : Unexpected Scenario");
+                Loger.Write("EncWindow.xaml.cs : BtnEncodeCancel_Click : Unexpected Scenario");
             }
         }
 
         private void Start()
         {
-            Btn1.IsEnabled = false;
+            BtnEncodeCancel.IsEnabled = false;
 
             enc_item_manager_.Refresh();
             List<EncodeJob> jobs = enc_item_manager_.GetToEncodeJobs();
 
-            enc_manager_.Start(jobs);
-            Btn1.Content = kBtnLabelCancel;
+            enc_manager_.Start(jobs, TextBoxDestPath.Text);
+            BtnEncodeCancel.Content = kBtnLabelCancel;
             ListView1.IsEnabled = false;
             BtnRemoveDone.IsEnabled = false;
+            BtnOpenDestPath.IsEnabled = false;
             ListView1.Items.Refresh();
 
             Task.Delay(1000).ContinueWith(_ =>
             {
                 Dispatcher.Invoke(() =>
                 {
-                    Btn1.IsEnabled = true;
+                    BtnEncodeCancel.IsEnabled = true;
                 });
             });
         }
 
         private void Cancel()
         {
-            Btn1.IsEnabled = false;
+            BtnEncodeCancel.IsEnabled = false;
 
             enc_manager_.OnEncodeCanceled();
-            Btn1.Content = kBtnLabelEncode;
+            BtnEncodeCancel.Content = kBtnLabelEncode;
             ListView1.IsEnabled = true;
             BtnRemoveDone.IsEnabled = true;
+            BtnOpenDestPath.IsEnabled = true;
 
             Task.Delay(1000).ContinueWith(_ =>
             {
                 Dispatcher.Invoke(() =>
                 {
-                    Btn1.IsEnabled = true;
+                    BtnEncodeCancel.IsEnabled = true;
                 });
             });
         }
@@ -199,9 +203,10 @@ namespace ShakaCallstackParser
         {
             Dispatcher.Invoke(() =>
             {
-                Btn1.Content = kBtnLabelEncode;
+                BtnEncodeCancel.Content = kBtnLabelEncode;
                 ListView1.IsEnabled = true;
                 BtnRemoveDone.IsEnabled = true;
+                BtnOpenDestPath.IsEnabled = true;
             });
         }
 
@@ -238,7 +243,8 @@ namespace ShakaCallstackParser
             var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
             if (dialog.ShowDialog(this).GetValueOrDefault())
             {
-                TextDestPath.Text = dialog.SelectedPath;
+                TextBoxDestPath.Text = dialog.SelectedPath;
+                ConfigManager.SetDestPath(dialog.SelectedPath);
             }
         }
     }

@@ -37,7 +37,6 @@ namespace ShakaCallstackParser
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-#pragma region Shaka callstack
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == true)
             {
@@ -46,9 +45,6 @@ namespace ShakaCallstackParser
                 ListView1.ItemsSource = result;
                 
             }
-#pragma endregion
-
-
         }
 
         private List<ListItems> Parse(string[] inp)
@@ -133,60 +129,13 @@ namespace ShakaCallstackParser
 
         private void ListView1_OnDroped(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files.Length >= 1)
-                {
-                    string fileStr = "";
-                    foreach (string file in files)
-                    {
-                        fileStr += file + "\n";
-                    }
-                    //MessageBox.Show(fileStr);
-                }
-
-                using (Process p = new Process())
-                {
-                    p.StartInfo.FileName = "ffmpeg.exe";
-                    p.StartInfo.Arguments = "-y -re -i bunny.mp4 -c:a copy -c:s copy -c:v copy -t 5 zzz.mp4";
-                    p.StartInfo.WorkingDirectory = "";
-
-                    p.StartInfo.UseShellExecute = false;
-                    p.StartInfo.RedirectStandardOutput = true;
-                    p.StartInfo.RedirectStandardError = true;
-                    p.Start();
-                    string output = "";
-                    string readStr = "";
-
-                    List<ListItems> result = new List<ListItems>();
-
-                    string sharpStr = "sharpStr";
-                    string atStr = "atStr";
-                    string inStr = "inStr";
-                    
-                    while ((readStr = p.StandardError.ReadLine()) != null)
-                    {
-                        if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
-                        {
-                            //MessageBox.Show(readStr);
-                        }
-                        output += readStr;
-
-                        if (readStr.Length > 6 && readStr.Substring(0, 6) == "frame=")
-                        {
-                            ListItems li = new ListItems();
-                            li.numberItem = sharpStr;
-                            li.atItem = atStr;
-                            li.inItem = readStr;
-
-                            result.Add(li);
-                        }
-                    }
-                    ListView1.ItemsSource = result;
-                    p.WaitForExit();
-                }
-            }
+            //if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            //{
+            //    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            //    if (files.Length >= 1)
+            //    {
+            //    }
+            //}
         }
 
         private void btnNext_Click(object sender, RoutedEventArgs e)

@@ -11,7 +11,7 @@ namespace ShakaCallstackParser
     static class EncodingFileManager
     {
         const string TAG = "EncodingFileManager.cs : ";
-        const string kManageFilePath = "config.txt";
+        const string kManageFilePath = "temp_file_info.txt";
 
         public static void EncodingStarted(string path)
         {
