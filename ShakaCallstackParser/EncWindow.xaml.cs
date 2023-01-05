@@ -35,8 +35,9 @@ namespace ShakaCallstackParser
 
         private void Init()
         {
-            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(EncodeProgressChanged,
-                EncodeFinished, AllEncodeFinished, SSIMCalculateFinished, AnalyzeFinished);
+            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStarted,
+                OnEncodeProgressChanged, OnEncodeFinished, OnAllEncodeFinished, OnEncodeCancled,
+                OnAnalyzeStarted, OnSSIMCalculateFinished, OnAnalyzeFinished);
             enc_manager_ = new EncodeManager(callback);
             enc_item_manager_ = new EncItemManager();
 
@@ -137,40 +138,62 @@ namespace ShakaCallstackParser
             });
         }
 
-        private void SSIMCalculateFinished(int index, int crf, double ssim)
+        #region Analyzer Callback
+        private void OnAnalyzeStarted(int index)
         {
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-
-                string strSSIM = Math.Round(ssim, 4).ToString();
-                string msg = crf.ToString() + ":" + strSSIM;
-                if (enc_items[index].note.Length == 0)
-                {
-                    enc_items[index].note = msg;
-                }
-                else
-                {
-                    enc_items[index].note += ", " + msg;
-                }
+                enc_items[index].note = "Analyzing";
                 ListView1.Items.Refresh();
             });
         }
 
-        private void AnalyzeFinished(int index, int crf)
+        private void OnSSIMCalculateFinished(int index, int crf, double ssim)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                //List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+
+                //string strSSIM = Math.Round(ssim, 4).ToString();
+                //string msg = crf.ToString() + ":" + strSSIM;
+                //if (enc_items[index].note.Length == 0)
+                //{
+                //    enc_items[index].note = msg;
+                //}
+                //else
+                //{
+                //    enc_items[index].note += ", " + msg;
+                //}
+                //ListView1.Items.Refresh();
+            });
+        }
+
+        private void OnAnalyzeFinished(int index, int crf)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                //List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                //enc_items[index].note += " => " + crf.ToString();
+                //ListView1.Items.Refresh();
+            });
+        }
+        #endregion
+
+        #region Encoder Callback
+        private void OnEncodeStarted(int index, int crf)
         {
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-
-                enc_items[index].note += " => " + crf.ToString();
+                enc_items[index].note = "Encoding";
                 ListView1.Items.Refresh();
             });
         }
 
-        private void EncodeProgressChanged(int index, int percentage)
+        private void OnEncodeProgressChanged(int index, int percentage)
         {
-            Dispatcher.Invoke(() => 
+            Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
 
@@ -179,7 +202,7 @@ namespace ShakaCallstackParser
             });
         }
 
-        private void EncodeFinished(int index, int result_code)
+        private void OnEncodeFinished(int index, int result_code)
         {
             Dispatcher.Invoke(() =>
             {
@@ -187,19 +210,19 @@ namespace ShakaCallstackParser
 
                 if (result_code == 0)
                 {
-                    enc_items[index].note = enc_items[index].note + ", Success[" + result_code.ToString() + "]";
+                    enc_items[index].note = "Success";
                     enc_items[index].status = EncListItems.Status.success;
                 }
                 else
                 {
-                    enc_items[index].note = enc_items[index].note + ", Fail[" + result_code.ToString() + "]";
+                    enc_items[index].note = "Fail";
                     enc_items[index].status = EncListItems.Status.fail;
                 }
                 ListView1.Items.Refresh();
             });
         }
 
-        private void AllEncodeFinished()
+        private void OnAllEncodeFinished()
         {
             Dispatcher.Invoke(() =>
             {
@@ -209,6 +232,17 @@ namespace ShakaCallstackParser
                 BtnOpenDestPath.IsEnabled = true;
             });
         }
+
+        private void OnEncodeCancled(int index)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                enc_items[index].note = "Canceled";
+                ListView1.Items.Refresh();
+            });
+        }
+        #endregion
 
         private void Window_Activated(object sender, EventArgs e)
         {

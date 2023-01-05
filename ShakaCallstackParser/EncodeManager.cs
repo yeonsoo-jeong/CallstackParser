@@ -10,23 +10,33 @@ namespace ShakaCallstackParser
     {
         public class Callbacks
         {
+            public delegate void OnEncodeStarted(int index, int crf);
             public delegate void OnProgressChanged(int index, int percentage);
             public delegate void OnEncodeFinished(int index, int result_code);
             public delegate void OnAllEncodeFinished();
+            public delegate void OnEncodeCancled(int index);
+            public delegate void OnAnalyzeStarted(int index);
             public delegate void OnSSIMCalculated(int index, int crf, double ssim);
             public delegate void OnAnalyzeFinished(int index, int crf);
-            public Callbacks(OnProgressChanged pc, OnEncodeFinished ef, OnAllEncodeFinished aef, OnSSIMCalculated sc, OnAnalyzeFinished af)
+            public Callbacks(OnEncodeStarted es, OnProgressChanged pc, OnEncodeFinished ef, OnAllEncodeFinished aef, OnEncodeCancled ec,
+                OnAnalyzeStarted ast, OnSSIMCalculated sc, OnAnalyzeFinished af)
             {
+                encode_started = es;
                 progress_changed = pc;
                 encode_finished = ef;
                 all_encode_finished = aef;
+                encode_canceled = ec;
+                analyze_started = ast;
                 ssim_calculated = sc;
                 analyze_finished = af;
             }
 
+            public OnEncodeStarted encode_started;
             public OnProgressChanged progress_changed;
             public OnEncodeFinished encode_finished;
             public OnAllEncodeFinished all_encode_finished;
+            public OnEncodeCancled encode_canceled;
+            public OnAnalyzeStarted analyze_started;
             public OnSSIMCalculated ssim_calculated;
             public OnAnalyzeFinished analyze_finished;
         }
@@ -72,6 +82,7 @@ namespace ShakaCallstackParser
             if (jobs.Count() > 0)
             {
                 analyzer_.Analyze(jobs[0].index_, jobs[0].path_, jobs[0].thread_num_);
+                callbacks_.analyze_started(jobs[0].index_);
                 return true;
             }
             
@@ -110,6 +121,7 @@ namespace ShakaCallstackParser
             is_canceled_ = true;
             encoder_.OnEncodeCanceled();
             analyzer_.OnEncodeCanceled();
+            callbacks_.encode_canceled(GetCurrentIndex());
         }
 
         public void OnWindowClosed()
@@ -126,6 +138,7 @@ namespace ShakaCallstackParser
             string path = GetCurrentEncPath();
             int thread_num = GetCurrentEncThreads();
             encoder_.Encode(index, path, out_directory_, thread_num, crf);
+            callbacks_.encode_started(index, crf);
         }
 
         private void EncodeProgressChanged(int index, int percentage)
@@ -148,6 +161,7 @@ namespace ShakaCallstackParser
             if (enc_jobs_.Count() > current_enc_index_)
             {
                 analyzer_.Analyze(enc_jobs_[current_enc_index_].index_, enc_jobs_[current_enc_index_].path_, enc_jobs_[current_enc_index_].thread_num_);
+                callbacks_.analyze_started(enc_jobs_[current_enc_index_].index_);
             }
             else
             {

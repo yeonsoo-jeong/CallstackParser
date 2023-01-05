@@ -8,7 +8,7 @@
         Title="EncWindow" Height="450" Width="836"
         Activated="Window_Activated" Closed="Window_Closed">
     <Grid>
-        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="768" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
+        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="775" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
             <ListView.Resources>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -45,7 +45,13 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Note" DisplayMemberBinding="{Binding note}" Width="120" />
+                        <GridViewColumn Header="Note" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextAlignment="Center" Text="{Binding note}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView.Columns>
                 </GridView>
             </ListView.View>
