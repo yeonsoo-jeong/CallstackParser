@@ -64,12 +64,12 @@ namespace ShakaCallstackParser
             {
                 result.Add(new TimePair(0, analyze_duration));
             } 
-            else if (input_duration <= analyze_duration * 4)
+            else if (input_duration < 60)
             {
                 int middle_sec = (input_duration - analyze_duration) / 2;
                 result.Add(new TimePair(middle_sec, analyze_duration));
             }
-            else if (input_duration < 600)
+            else if (input_duration < 60 * 10)
             {
                 // 10 minute
                 int middle_sec = (input_duration - analyze_duration) / 2;
@@ -77,16 +77,25 @@ namespace ShakaCallstackParser
                 int right = middle_sec + (middle_sec / 2);
                 result.Add(new TimePair(left, analyze_duration));
                 result.Add(new TimePair(right, analyze_duration));
-            } 
+            }
             else
             {
-                int middle_sec = (input_duration - analyze_duration) / 2;
-                int left = middle_sec / 2;
-                int middle = middle_sec;
-                int right = middle_sec + (middle_sec / 2);
-                result.Add(new TimePair(left, analyze_duration));
-                result.Add(new TimePair(middle, analyze_duration));
-                result.Add(new TimePair(right, analyze_duration));
+                const int max = 10;
+                int count = 2;
+                while (count < max)
+                {
+                    if (input_duration < 600 * count++)
+                    {
+                        break;
+                    }
+                }
+
+                int base_sec = (input_duration - analyze_duration) / 2;
+                int denominator = count + 1;
+                for (int i = 1; i <= count; i++)
+                {
+                    result.Add(new TimePair(base_sec * (i / denominator), analyze_duration));
+                }
             }
             return result;
         }

@@ -15,22 +15,11 @@ namespace ShakaCallstackParser
     {
         const string TAG = "SSIMCalculator.cs : ";
 
-        public class Callbacks
-        {
-            public delegate void OnFinished(int index, int crf, double ssim);
-            public Callbacks(OnFinished f)
-            {
-                finished = f;
-            }
-            public OnFinished finished;
-        }
-        Callbacks callbacks_;
         Process enc_process_ = null;
         bool is_canceled_ = false;
 
-        public SSIMCalculator(Callbacks callback)
+        public SSIMCalculator()
         {
-            callbacks_ = callback;
         }
 
         public static double ParseSSIM(string line)
@@ -52,18 +41,48 @@ namespace ShakaCallstackParser
             return ret;
         }
 
-        public void Calculate(int index, string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        public Tuple<double, bool> Calculate(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
             is_canceled_ = false;
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.WorkerReportsProgress = true;
-            worker.WorkerSupportsCancellation = true;
-            worker.DoWork += new DoWorkEventHandler(EncodeBackground);
-            worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
-            worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
+            return CalculateAverageSSIM(path, thread_num, crf, time_list);
+        }
 
-            CalcArgument arg = new CalcArgument(index, path, thread_num, crf, time_list);
-            worker.RunWorkerAsync(argument: arg);
+        private Tuple<double, bool> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        {
+            double ret = -1;
+            double ssim_sum = 0;
+            int count = 0;
+            bool is_cancel = false;
+            for (int i = 0; i < time_list.Count(); i++)
+            {
+                if (is_canceled_)
+                {
+                    is_cancel = true;
+                    break;
+                }
+
+                double ssim_result = CalculateSSIM(path, thread_num, crf, time_list[i].start_time, time_list[i].duration);
+                if (ssim_result > 0)
+                {
+                    {
+                        // Log
+                        string name = Path.GetFileName(path);
+                        string msg = "name=" + name + ", thread_num= " + thread_num + ", crf=" + crf + ", start_time=" +
+                            time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + ssim_result;
+                        Loger.Write(msg);
+                    }
+
+                    ssim_sum += ssim_result;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                ret = ssim_sum / count;
+            }
+
+            return new Tuple<double, bool>(ret, is_cancel);
         }
 
         public void OnEncodeCanceled()
@@ -81,9 +100,6 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write(TAG + "OnEncodeCanceled : Exception:");
-                Loger.Write(e.ToString());
-                Loger.Write("");
             }
         }
 
@@ -102,47 +118,7 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write(TAG + "OnWindowClosed : Exception:");
-                Loger.Write(e.ToString());
-                Loger.Write("");
             }
-        }
-
-        private void EncodeBackground(object sender, DoWorkEventArgs e)
-        {
-            CalcArgument arg = (CalcArgument)e.Argument;
-            List<AnalyzeTimeSelector.TimePair> time_list = arg.time_pair_list;
-
-            double ssim = 0;
-            int count = 0;   
-            for (int i = 0; i < time_list.Count(); i++)
-            {
-                if (is_canceled_)
-                {
-                    return;
-                }
-                double ssim_result = CalculateSSIM(arg.path, arg.thread_num, arg.crf, time_list[i].start_time, time_list[i].duration);
-                if (ssim_result > 0)
-                {
-                    {
-                        // Log
-                        string name = Path.GetFileName(arg.path);
-                        string msg = "name=" + name + ", thread_num= " + arg.thread_num + ", crf=" + arg.crf + ", start_time=" + time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + ssim_result;
-
-                        Loger.Write(msg);
-                    }
-                    
-                    ssim += ssim_result;
-                    count++;
-                }
-            }
-
-            if (count > 0)
-            {
-                ssim /= (double)count;
-            }
-
-            e.Result = new CalcResult(arg.index, arg.crf, ssim);
         }
 
         private double CalculateSSIM(string path, int thread_num, int crf, int start_time, int duration)
@@ -161,70 +137,19 @@ namespace ShakaCallstackParser
                 enc_process_.Start();
 
                 string readStr = "";
-                //string findStr = "SSIM Mean Y:";
                 while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                 {
                     double result = ParseSSIM(readStr);
                     if (result >= 0)
                     {
                         ret = result;
+                        break;
                     }
                     System.Threading.Thread.Sleep(10);
                 }
-                enc_process_.WaitForExit();
             }
 
             return ret;
-        }
-
-        private void OnFinished(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (is_canceled_)
-            {
-                return;
-            }
-
-            int index = ((CalcResult)(e.Result)).index;
-            int crf = ((CalcResult)(e.Result)).crf;
-            double ssim = ((CalcResult)(e.Result)).ssim;
-            callbacks_.finished(index, crf, ssim);
-        }
-
-        private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-
-        }
-
-        private class CalcArgument
-        {
-            public CalcArgument(int _index, string _path, int _thread_num, int _crf, List<AnalyzeTimeSelector.TimePair> _time_list)
-            {
-                index = _index;
-                path = _path;
-                thread_num = _thread_num;
-                crf = _crf;
-                time_pair_list = _time_list;
-            }
-
-            public int index;
-            public string path;
-            public int thread_num;
-            public int crf;
-            public List<AnalyzeTimeSelector.TimePair> time_pair_list;
-        }
-
-        private class CalcResult
-        {
-            public CalcResult(int _index, int _crf, double _ssim)
-            {
-                index = _index;
-                crf = _crf;
-                ssim = _ssim;
-            }
-
-            public int index;
-            public int crf;
-            public double ssim;
         }
     }
 }

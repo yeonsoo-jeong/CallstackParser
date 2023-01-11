@@ -10,26 +10,12 @@ namespace ShakaCallstackParser
 {
     class Analyzer
     {
+        const string TAG = "Analyzer.cs : ";
+
         private const int kDefaultCrfValue = 28;
         private const double kTargetSSIMValue = 0.9870;
         private const double kTargetSSIMRangeMin = 0.9869;
         private const double kTargetSSIMRangeMax = 0.9875;
-
-        public class Callbacks
-        {
-            public delegate void OnAnalyzeFinished(int index, int crf);
-            public delegate void OnCalculated(int index, int crf, double ssim);
-
-            public Callbacks(OnCalculated c, OnAnalyzeFinished af)
-            {
-                analyze_finished = af;
-                calculated = c;
-            }
-
-            public OnAnalyzeFinished analyze_finished;
-            public OnCalculated calculated;
-        }
-        Callbacks callbacks_;
 
         SSIMCalculator ssim_calculator_;
 
@@ -39,17 +25,16 @@ namespace ShakaCallstackParser
         bool is_canceled_ = false;
         int current_analyze_index_ = -1;
 
-        public Analyzer(Callbacks callback)
+        public Analyzer()
         {
-            callbacks_ = callback;
-            ssim_calculator_ = new SSIMCalculator(new SSIMCalculator.Callbacks(OnCalcuateFinished));
+            ssim_calculator_ = new SSIMCalculator();
         }
 
-        public bool Analyze(int index, string path, int thread_num)
+        public int Analyze(int index, string path, int thread_num)
         {
             if (is_analyzing_)
             {
-                return false;
+                return -1;
             }
             is_analyzing_ = true;
             is_canceled_ = false;
@@ -61,7 +46,7 @@ namespace ShakaCallstackParser
             {
                 // Log
 
-                string msg = Path.GetFileName(path) + " time: ";
+                string msg = TAG + "Analyze : " + Path.GetFileName(path) + " time: ";
                 for (int i = 0; i < time_pair.Count(); i++)
                 {
                     msg += "[" + time_pair[i].start_time + " : " + time_pair[i].duration + "] ";
@@ -73,10 +58,9 @@ namespace ShakaCallstackParser
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 28, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 27, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 26, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 25, time_pair));
 
-            CalculateSSIM(analyze_jobs_[0]);
-
-            return true;
+            return CalculateAverageSSIM(analyze_jobs_);
         }
 
         public void OnEncodeCanceled()
@@ -93,10 +77,44 @@ namespace ShakaCallstackParser
             ssim_calculator_.OnWindowClosed();
         }
 
-        private int CalculateSSIM(AnalyzeJob job)
+        private int CalculateAverageSSIM(List<AnalyzeJob> jobs)
         {
-            ssim_calculator_.Calculate(job.index, job.path, job.thread_num, job.crf, job.time_pair_list);
-            return 0;
+            int result = -1;
+            while (analyze_jobs_.Count() > current_analyze_index_)
+            {
+                AnalyzeJob job = jobs[current_analyze_index_];
+                Tuple<double, bool> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
+                double avg_ssim = tuple.Item1;
+                bool is_cancel = tuple.Item2;
+                
+                if (is_canceled_ || avg_ssim < 0)
+                {
+                    break;
+                }
+
+                if (IsValidSSIM(avg_ssim))
+                {
+                    result = job.crf;
+                    AnalyzeFinished();
+                    {
+                        Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
+                    }
+                    break;
+                }
+
+                current_analyze_index_++;
+                if (jobs.Count() > current_analyze_index_)
+                {
+                    result = job.crf;
+                    AnalyzeFinished();
+                    {
+                        Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
+                    }
+                    break;
+                }
+            }
+            
+            return result;
         }
 
         private void AnalyzeFinished()
@@ -104,43 +122,6 @@ namespace ShakaCallstackParser
             analyze_jobs_.Clear();
             current_analyze_index_ = -1;
             is_analyzing_ = false;
-        }
-
-        private void OnCalcuateFinished(int _index, int crf, double ssim)
-        {
-            if (is_canceled_)
-            {
-                return;
-            }
-
-            callbacks_.calculated(_index, crf, ssim);
-            if (IsValidSSIM(ssim))
-            {
-                callbacks_.analyze_finished(_index, crf);
-                AnalyzeFinished();
-                {
-                    // Log
-                    string msg = "selected crf = " + crf;
-                    Loger.Write(msg);
-                }
-                return;
-            }
-
-            current_analyze_index_++;
-            if (analyze_jobs_.Count() > current_analyze_index_)
-            {
-                CalculateSSIM(analyze_jobs_[current_analyze_index_]);
-            }
-            else
-            {
-                callbacks_.analyze_finished(_index, crf);
-                AnalyzeFinished();
-                {
-                    // Log
-                    string msg = "selected crf = " + crf;
-                    Loger.Write(msg);
-                }
-            }
         }
 
         private bool IsValidSSIM(double ssim)

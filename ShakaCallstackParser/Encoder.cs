@@ -19,15 +19,12 @@ namespace ShakaCallstackParser
         public class Callbacks
         {
             public delegate void OnProgressChanged(int index, int percentage);
-            public delegate void OnFinished(int index, int result_code);
-            public Callbacks(OnProgressChanged pc, OnFinished f)
+            public Callbacks(OnProgressChanged pc)
             {
                 progress_changed = pc;
-                finished = f;
             }
 
             public OnProgressChanged progress_changed;
-            public OnFinished finished;
         }
         Callbacks callbacks_;
 
@@ -35,13 +32,6 @@ namespace ShakaCallstackParser
 
         bool is_encoding_ = false;
         bool is_canceled_ = false;
-        int index_ = 0;
-        int result_code_;
-        string encoding_path_;
-        string org_name_;
-        string org_path_;
-
-        
 
         public Encoder(Callbacks callback)
         {
@@ -49,26 +39,99 @@ namespace ShakaCallstackParser
         }
 
 
-        public bool Encode(int index, string inpPath, string out_directory, int thread_num, int crf)
+        public int Encode(int index, string inpPath, string out_directory, int thread_num, int crf)
         {
             if (is_encoding_)
             {
-                return false;
+                return -1;
             }
             is_encoding_ = true;
             is_canceled_ = false;
-            index_ = index;
-            result_code_ = -1;
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.WorkerReportsProgress = true;
-            worker.DoWork += new DoWorkEventHandler(EncodeBackground);
-            worker.ProgressChanged += new ProgressChangedEventHandler(OnProgressChanged);
-            worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(OnFinished);
+            int result_code = -1;
 
-            EncArgument ea = new EncArgument(index, inpPath, out_directory, thread_num, crf);
-            worker.RunWorkerAsync(argument: ea);
+            string encoding_path = "";
 
-            return true;
+            double result = -1.0f;
+            using (enc_process_ = new Process())
+            {
+                encoding_path = out_directory + "\\" + kEncodingPrefix + Path.GetFileName(inpPath);
+
+                EncodingFileManager.EncodingStarted(encoding_path);
+
+                enc_process_.EnableRaisingEvents = true;
+                enc_process_.StartInfo.FileName = "ffmpeg.exe";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+                enc_process_.StartInfo.WorkingDirectory = "";
+                enc_process_.StartInfo.CreateNoWindow = true;
+                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                enc_process_.StartInfo.RedirectStandardOutput = true;
+                enc_process_.StartInfo.RedirectStandardError = true;
+                enc_process_.Start();
+
+                string readStr = "";
+                int duration_seconds = -1;
+
+                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
+                {
+                    if (is_canceled_)
+                    {
+                        return -1;
+                    }
+
+                    if (duration_seconds == -1)
+                    {
+                        if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
+                        {
+                            string substr = readStr.Substring(12, 11);
+                            duration_seconds = CalculateSeconds(substr);
+                        }
+                    } 
+                    else
+                    {
+                        if (readStr.Length > 6 && readStr.Substring(0, 6) == "frame=")
+                        {
+                            int idx = readStr.IndexOf("time=");
+                            if (idx >= 0)
+                            {
+                                string substr = readStr.Substring(idx + 5, 11);
+                                int seconds = CalculateSeconds(substr);
+                                int percentage = Convert.ToInt32((float)seconds / (float)duration_seconds * 100);
+                                OnProgressChanged(index, percentage);
+                            }
+                        }
+                    }
+
+                    double ssim = SSIMCalculator.ParseSSIM(readStr);
+                    if (ssim >= 0)
+                    {
+                        result = ssim;
+                    }
+                    System.Threading.Thread.Sleep(10);
+                }
+
+                enc_process_.WaitForExit();
+                result_code = enc_process_.ExitCode;
+            }
+
+            if (is_canceled_)
+            {
+                return -1;
+            }
+
+
+
+            {
+                // Log
+                string msg = TAG + "OnFinished : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result;
+                Loger.Write(msg);
+                Loger.Write("");
+            }
+
+            CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
+
+            is_encoding_ = false;
+
+            return result_code;
         }
 
         public void OnEncodeCanceled()
@@ -92,6 +155,7 @@ namespace ShakaCallstackParser
             }
             finally
             {
+                is_encoding_ = false;
                 EncodingFileManager.DeleteAllTempFiles();
             }
         }
@@ -117,121 +181,14 @@ namespace ShakaCallstackParser
             }
             finally
             {
+                is_encoding_ = false;
                 EncodingFileManager.DeleteAllTempFiles();
             }
         }
 
-        private void EncodeBackground(object sender, DoWorkEventArgs e)
+        private void OnProgressChanged(int index, int percentage)
         {
-            EncArgument arg = (EncArgument)e.Argument;
-            e.Result = -1.0f;
-            using (enc_process_ = new Process())
-            {
-                BackgroundWorker worker = sender as BackgroundWorker;
-                org_path_ = arg.path;
-                org_name_ = Path.GetFileName(arg.path);
-                encoding_path_ = arg.out_directory + "\\" + kEncodingPrefix + org_name_;
-
-                EncodingFileManager.EncodingStarted(encoding_path_);
-
-                enc_process_.EnableRaisingEvents = true;
-                enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + arg.path + "\" -threads " + arg.thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + arg.crf + " \"" + encoding_path_ + "\"";
-                enc_process_.StartInfo.WorkingDirectory = "";
-                enc_process_.StartInfo.CreateNoWindow = true;
-                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                enc_process_.StartInfo.RedirectStandardOutput = true;
-                enc_process_.StartInfo.RedirectStandardError = true;
-                enc_process_.Start();
-
-                string readStr = "";
-                int duration_seconds = 0;
-
-                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
-                {
-                    if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
-                    {
-                        string substr = readStr.Substring(12, 11);
-                        duration_seconds = CalculateSeconds(substr);
-                    }
-
-                    if (readStr.Length > 6 && readStr.Substring(0, 6) == "frame=")
-                    {
-                        int index = readStr.IndexOf("time=");
-                        if (index >= 0)
-                        {
-                            string substr = readStr.Substring(index + 5, 11);
-                            int seconds = CalculateSeconds(substr);
-                            int percentage = Convert.ToInt32((float)seconds / (float)duration_seconds * 100);
-                            worker.ReportProgress(percentage);
-                            //delegate_on_progress_changed(arg.index, percentage);
-                        }
-                    }
-
-                    double ssim = SSIMCalculator.ParseSSIM(readStr);
-                    if (ssim >= 0)
-                    {
-                        e.Result = ssim;
-                    }
-                    System.Threading.Thread.Sleep(10);
-                }
-
-                enc_process_.WaitForExit();
-                result_code_ = enc_process_.ExitCode;
-            }
-        }
-
-        private void OnFinished(object sender, RunWorkerCompletedEventArgs e)
-        {
-            is_encoding_ = false;
-            if (is_canceled_)
-            {
-                return; 
-            }
-
-            if (e.Error != null)
-            {
-                // handle the error
-                {
-                    // Log
-                    string msg = TAG + "OnFinished : e.Error";
-                    Loger.Write(msg);
-                    Loger.Write("");
-                }
-            }
-            else if (e.Cancelled)
-            {
-                // handle cancellation
-                {
-                    // Log
-                    string msg = TAG + "OnFinished : e.Cancelled";
-                    Loger.Write(msg);
-                    Loger.Write("");
-                }
-            }
-            else
-            {
-                double ssim = -1;
-                if (e.Result != null)
-                {
-                    Double.TryParse(e.Result.ToString(), out ssim);
-                }
-
-                {
-                    // Log
-                    string msg = TAG + "OnFinished : Encode Finished. name=" + org_name_ + ", ssim=" + ssim;
-                    Loger.Write(msg);
-                    Loger.Write("");
-                }
-
-                CustomRename(org_path_, org_name_, encoding_path_);
-                callbacks_.finished(index_, result_code_);
-            }
-        }
-
-        private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            callbacks_.progress_changed(index_, e.ProgressPercentage);
+            callbacks_.progress_changed(index, percentage);
             //MessageBox.Show(e.ProgressPercentage.ToString() + "%");
         }
 
@@ -294,24 +251,6 @@ namespace ShakaCallstackParser
                     Loger.Write("");
                 }
             }
-        }
-
-        class EncArgument
-        {
-            public EncArgument(int _index, string _path, string _out_directory, int _thread_num, int _crf)
-            {
-                index = _index;
-                path = _path;
-                out_directory = _out_directory;
-                crf = _crf;
-                thread_num = _thread_num;
-            }
-
-            public int index;
-            public string path;
-            public string out_directory;
-            public int thread_num;
-            public int crf;
         }
     }
 }

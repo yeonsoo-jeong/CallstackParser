@@ -27,21 +27,41 @@ namespace ShakaCallstackParser
         const string kBtnLabelEncode = "Encode";
         const string kBtnLabelCancel = "Cancel";
 
+        public static string[] kCpuUsageItems =
+        {
+            "Full",
+            "Half"
+        };
+
         public EncWindow()
         {
             InitializeComponent();
             Init();
         }
 
+
+        // Todo. 
+        // 1. Deinterlace Filter
+        // 
+
+
+
+
         private void Init()
         {
             EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStarted,
                 OnEncodeProgressChanged, OnEncodeFinished, OnAllEncodeFinished, OnEncodeCancled,
-                OnAnalyzeStarted, OnSSIMCalculateFinished, OnAnalyzeFinished);
+                OnAnalyzeStarted, OnAnalyzeFinished);
             enc_manager_ = new EncodeManager(callback);
             enc_item_manager_ = new EncItemManager();
 
             TextBoxDestPath.Text = ConfigManager.GetDestPath();
+
+            for (int i = 0; i < kCpuUsageItems.Length; i++)
+            {
+                ComboUsageAll.Items.Add(kCpuUsageItems[i]);
+            }
+            ComboUsageAll.SelectedIndex = 0;
 
             EncodingFileManager.DeleteAllTempFiles();
         }
@@ -53,7 +73,7 @@ namespace ShakaCallstackParser
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length >= 1)
                 {
-                    enc_item_manager_.DistinctAddFiles(files);
+                    enc_item_manager_.DistinctAddFiles(files, ComboUsageAll.SelectedItem.ToString());
                     ListView1.ItemsSource = enc_item_manager_.GetEncItems();
                     ListView1.Items.Refresh();
                 }
@@ -103,11 +123,12 @@ namespace ShakaCallstackParser
             enc_item_manager_.Refresh();
             List<EncodeJob> jobs = enc_item_manager_.GetToEncodeJobs();
 
-            enc_manager_.Start(jobs, TextBoxDestPath.Text);
+            Task.Run(() => enc_manager_.Start(jobs, TextBoxDestPath.Text));
+
             BtnEncodeCancel.Content = kBtnLabelCancel;
-            ListView1.IsEnabled = false;
             BtnRemoveDone.IsEnabled = false;
             BtnOpenDestPath.IsEnabled = false;
+            ListView1.IsEnabled = false;
             ListView1.Items.Refresh();
 
             Task.Delay(1000).ContinueWith(_ =>
@@ -146,26 +167,6 @@ namespace ShakaCallstackParser
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Analyzing";
                 ListView1.Items.Refresh();
-            });
-        }
-
-        private void OnSSIMCalculateFinished(int index, int crf, double ssim)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                //List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-
-                //string strSSIM = Math.Round(ssim, 4).ToString();
-                //string msg = crf.ToString() + ":" + strSSIM;
-                //if (enc_items[index].note.Length == 0)
-                //{
-                //    enc_items[index].note = msg;
-                //}
-                //else
-                //{
-                //    enc_items[index].note += ", " + msg;
-                //}
-                //ListView1.Items.Refresh();
             });
         }
 
@@ -280,6 +281,12 @@ namespace ShakaCallstackParser
                 TextBoxDestPath.Text = dialog.SelectedPath;
                 ConfigManager.SetDestPath(dialog.SelectedPath);
             }
+        }
+
+        private void ComboUsageAll_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            enc_item_manager_.OnCpuUsageChanged((sender as ComboBox).SelectedItem.ToString());
+            ListView1.Items.Refresh();
         }
     }
 }

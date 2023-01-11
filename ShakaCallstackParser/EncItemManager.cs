@@ -83,7 +83,7 @@ namespace ShakaCallstackParser
             }
         }
 
-        public void DistinctAddFiles(string[] files)
+        public void DistinctAddFiles(string[] files, string cpu_usage)
         {
             if (files.Length >= 1)
             {
@@ -91,17 +91,24 @@ namespace ShakaCallstackParser
                 {
                     EncListItems item = new EncListItems();
                     item.path = file;
-                    item.cpu_usage = new List<string>()
-                        {
-                            "Full",
-                            "Half"
-                        };
-                    item.cpu_usage_selected = "Full";
+                    item.cpu_usage = new List<string>(EncWindow.kCpuUsageItems);
+                    item.cpu_usage_selected = cpu_usage;
                     enc_items_.Add(item);
                 }
 
                 enc_items_ = enc_items_.Distinct(new EncListComparer()).ToList();
                 ReorderEncListNumber();
+            }
+        }
+
+        public void OnCpuUsageChanged(string changed_item)
+        {
+            for (int i = 0; i < enc_items_.Count; i++)
+            {
+                if (enc_items_[i].status != EncListItems.Status.success)
+                {
+                    enc_items_[i].cpu_usage_selected = changed_item;
+                }
             }
         }
 
