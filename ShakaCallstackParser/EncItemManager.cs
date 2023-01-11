@@ -20,6 +20,20 @@ namespace ShakaCallstackParser
             return enc_items_;
         }
 
+        public int GetIndexByNumber(int number)
+        {
+            string num_str = number.ToString();
+            for (int i = 0; i < enc_items_.Count; i++)
+            {
+                if (enc_items_[i].number == num_str)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public void RemoveItems(List<EncListItems> items)
         {
             foreach (EncListItems item in items)
@@ -46,7 +60,7 @@ namespace ShakaCallstackParser
             int ret = 0;
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].status != EncListItems.Status.success)
+                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
                 {
                     ret++;
                 }
@@ -55,25 +69,24 @@ namespace ShakaCallstackParser
             return ret;
         }
 
-        public List<EncodeJob> GetToEncodeJobs()
+        public EncListItems GetToEncodeFirstItem()
         {
-            List<EncodeJob> jobs = new List<EncodeJob>();
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].status != EncListItems.Status.success)
+                if (EncListItems.IsStatusShouldEncode(enc_items_[i].status))
                 {
-                    jobs.Add(new EncodeJob(i, enc_items_[i].path, EncodeManager.GetCoreNumFromCpuUsage(enc_items_[i].cpu_usage_selected)));
+                    return enc_items_[i];
                 }
             }
 
-            return jobs;
+            return null;
         }
 
         public void Refresh()
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].status != EncListItems.Status.success)
+                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
                 {
                     // for cancel & restart scenario
                     enc_items_[i].note = "";
@@ -105,7 +118,7 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].status != EncListItems.Status.success)
+                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
                 {
                     enc_items_[i].cpu_usage_selected = changed_item;
                 }
@@ -126,6 +139,8 @@ namespace ShakaCallstackParser
         public enum Status
         {
             none,
+            analyzing,
+            encoding,
             success,
             fail
         }
@@ -135,6 +150,24 @@ namespace ShakaCallstackParser
             progress = 0;
             status = Status.none;
             note = "";
+        }
+
+        public static bool IsStatusShouldEncode(Status status)
+        {
+            if (status == Status.none || status == Status.fail)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsStatusProcessing(Status status)
+        {
+            if (status == Status.analyzing || status == Status.encoding)
+            {
+                return true;
+            }
+            return false;
         }
 
         public string number { get; set; }

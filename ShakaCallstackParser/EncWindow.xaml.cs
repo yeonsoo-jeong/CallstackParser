@@ -7,12 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+
+
+using System.IO;
 
 namespace ShakaCallstackParser
 {
@@ -23,7 +20,8 @@ namespace ShakaCallstackParser
     {
         EncodeManager enc_manager_;
         EncItemManager enc_item_manager_;
-        
+
+        const string TAG = "EncWindow.xaml.cs : ";
         const string kBtnLabelEncode = "Encode";
         const string kBtnLabelCancel = "Cancel";
 
@@ -46,14 +44,14 @@ namespace ShakaCallstackParser
 
 
 
-
         private void Init()
         {
             EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStarted,
-                OnEncodeProgressChanged, OnEncodeFinished, OnAllEncodeFinished, OnEncodeCancled,
-                OnAnalyzeStarted, OnAnalyzeFinished);
-            enc_manager_ = new EncodeManager(callback);
+                OnEncodeProgressChanged, OnEncodeCanceled, OnEncodeFailed, OnEncodeFinished, OnAllEncodeFinished,
+                OnAnalyzeStarted, OnAnalyzeCanceled, OnAnalyzeFailed, OnAnalyzeFinished);
+            
             enc_item_manager_ = new EncItemManager();
+            enc_manager_ = new EncodeManager(callback, enc_item_manager_);
 
             TextBoxDestPath.Text = ConfigManager.GetDestPath();
 
@@ -80,20 +78,8 @@ namespace ShakaCallstackParser
             }
         }
 
-        private void TempWriteResult()
-        {
-            List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-            for (int i = 0; i < enc_items.Count; i++)
-            {
-                Loger.Write("result[" + i + "]: index, number, combo, path=" + i + ", " + enc_items[i].number + ", " + enc_items[i].cpu_usage_selected + ", " + enc_items[i].path);
-            }
-            Loger.Write("");
-        }
-
         private void BtnEncodeCancel_Click(object sender, RoutedEventArgs e)
         {
-            TempWriteResult();
-
             if (BtnEncodeCancel.Content.ToString() == kBtnLabelEncode)
             {
                 if (enc_item_manager_.GetToEncodeItemsNum() > 0)
@@ -121,14 +107,13 @@ namespace ShakaCallstackParser
             BtnEncodeCancel.IsEnabled = false;
 
             enc_item_manager_.Refresh();
-            List<EncodeJob> jobs = enc_item_manager_.GetToEncodeJobs();
 
-            Task.Run(() => enc_manager_.Start(jobs, TextBoxDestPath.Text));
+            string dest_path = TextBoxDestPath.Text;
+            Task.Run(() => enc_manager_.Start(dest_path));
 
             BtnEncodeCancel.Content = kBtnLabelCancel;
             BtnRemoveDone.IsEnabled = false;
             BtnOpenDestPath.IsEnabled = false;
-            ListView1.IsEnabled = false;
             ListView1.Items.Refresh();
 
             Task.Delay(1000).ContinueWith(_ =>
@@ -146,7 +131,6 @@ namespace ShakaCallstackParser
 
             enc_manager_.OnEncodeCanceled();
             BtnEncodeCancel.Content = kBtnLabelEncode;
-            ListView1.IsEnabled = true;
             BtnRemoveDone.IsEnabled = true;
             BtnOpenDestPath.IsEnabled = true;
 
@@ -163,10 +147,36 @@ namespace ShakaCallstackParser
         private void OnAnalyzeStarted(int index)
         {
             Dispatcher.Invoke(() =>
-            {
+            {   
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Analyzing";
+                enc_items[index].status = EncListItems.Status.analyzing;
                 ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(enc_items[index].path));
+            });
+        }
+
+        private void OnAnalyzeCanceled(int index)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                enc_items[index].note = "Canceled";
+                enc_items[index].status = EncListItems.Status.fail;
+                ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(enc_items[index].path) + "\r\n");
+            });
+        }
+
+        private void OnAnalyzeFailed(int index)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                enc_items[index].note = "Failed";
+                enc_items[index].status = EncListItems.Status.fail;
+                ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(enc_items[index].path) + "\r\n");
             });
         }
 
@@ -177,6 +187,9 @@ namespace ShakaCallstackParser
                 //List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 //enc_items[index].note += " => " + crf.ToString();
                 //ListView1.Items.Refresh();
+
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                Loger.Write(TAG + "OnAnalyzeFinished : " + Path.GetFileName(enc_items[index].path) + ", crf=" + crf);
             });
         }
         #endregion
@@ -188,7 +201,9 @@ namespace ShakaCallstackParser
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Encoding";
+                enc_items[index].status = EncListItems.Status.encoding;
                 ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnEncodeStarted : " + Path.GetFileName(enc_items[index].path) + ", crf=" + crf);
             });
         }
 
@@ -203,23 +218,40 @@ namespace ShakaCallstackParser
             });
         }
 
-        private void OnEncodeFinished(int index, int result_code)
+        private void OnEncodeCanceled(int index)
         {
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-
-                if (result_code == 0)
-                {
-                    enc_items[index].note = "Success";
-                    enc_items[index].status = EncListItems.Status.success;
-                }
-                else
-                {
-                    enc_items[index].note = "Fail";
-                    enc_items[index].status = EncListItems.Status.fail;
-                }
+                enc_items[index].note = "Canceled";
+                enc_items[index].status = EncListItems.Status.fail;
                 ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnEncodeCanceled : " + Path.GetFileName(enc_items[index].path) + "\r\n");
+            });
+        }
+
+        private void OnEncodeFailed(int index, int result_code)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                enc_items[index].note = "Fail";
+                enc_items[index].status = EncListItems.Status.fail;
+                ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnEncodeFailed : " + Path.GetFileName(enc_items[index].path) + ", result_code=" + result_code);
+            });
+        }
+
+        private void OnEncodeFinished(int index)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
+                enc_items[index].note = "Success";
+                enc_items[index].status = EncListItems.Status.success;
+                enc_items[index].progress = 100;
+                ListView1.Items.Refresh();
+                Loger.Write(TAG + "OnEncodeFinished : " + Path.GetFileName(enc_items[index].path) + "\r\n");
             });
         }
 
@@ -228,21 +260,12 @@ namespace ShakaCallstackParser
             Dispatcher.Invoke(() =>
             {
                 BtnEncodeCancel.Content = kBtnLabelEncode;
-                ListView1.IsEnabled = true;
                 BtnRemoveDone.IsEnabled = true;
                 BtnOpenDestPath.IsEnabled = true;
+                Loger.Write(TAG + "OnAllEncodeFinished" + "\r\n");
             });
         }
 
-        private void OnEncodeCancled(int index)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-                enc_items[index].note = "Canceled";
-                ListView1.Items.Refresh();
-            });
-        }
         #endregion
 
         private void Window_Activated(object sender, EventArgs e)
@@ -252,19 +275,45 @@ namespace ShakaCallstackParser
         private void Window_Closed(object sender, EventArgs e)
         {
             enc_manager_.OnWindowClosed();
-            //MessageBox.Show("Closed");
         }
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            Loger.Write("e.RoutedEvent.Name=" + e.RoutedEvent.Name);
+            bool is_processing = false;
             List<EncListItems> items = new List<EncListItems>();
             foreach (EncListItems item in ListView1.SelectedItems)
             {
+                if ( EncListItems.IsStatusProcessing(item.status) )
+                {
+                    is_processing = true;
+                }
                 items.Add(item);
             }
-            enc_item_manager_.RemoveItems(items);
-            ListView1.Items.Refresh();
+            if (is_processing)
+            {
+                Task.Run(() =>
+                {
+                    Dispatcher.Invoke(async () =>
+                    {
+                        Cancel();
+                        while (enc_manager_.IsEncoding())
+                        {
+                            await Task.Delay(1);
+                        }
+                        enc_item_manager_.RemoveItems(items);
+                        ListView1.Items.Refresh();
+                        if (enc_item_manager_.GetToEncodeItemsNum() > 0)
+                        {
+                            Start();
+                        }
+                    });
+                });
+            }
+            else
+            {
+                enc_item_manager_.RemoveItems(items);
+                ListView1.Items.Refresh();
+            }
         }
 
         private void BtnRemoveDone_Click(object sender, RoutedEventArgs e)

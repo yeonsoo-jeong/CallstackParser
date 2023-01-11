@@ -23,14 +23,13 @@ namespace ShakaCallstackParser
 
         bool is_analyzing_ = false;
         bool is_canceled_ = false;
-        int current_analyze_index_ = -1;
 
         public Analyzer()
         {
             ssim_calculator_ = new SSIMCalculator();
         }
 
-        public int Analyze(int index, string path, int thread_num)
+        public int Analyze(string path, int thread_num)
         {
             if (is_analyzing_)
             {
@@ -38,7 +37,6 @@ namespace ShakaCallstackParser
             }
             is_analyzing_ = true;
             is_canceled_ = false;
-            current_analyze_index_ = 0;
             analyze_jobs_ = new List<AnalyzeJob>();
 
             AnalyzeTimeSelector selector = new AnalyzeTimeSelector();
@@ -55,10 +53,10 @@ namespace ShakaCallstackParser
             }
 
             // Should be descending order!
-            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 28, time_pair));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 27, time_pair));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 26, time_pair));
-            analyze_jobs_.Add(new AnalyzeJob(index, path, thread_num, 25, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 28, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 27, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 26, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
 
             return CalculateAverageSSIM(analyze_jobs_);
         }
@@ -80,9 +78,10 @@ namespace ShakaCallstackParser
         private int CalculateAverageSSIM(List<AnalyzeJob> jobs)
         {
             int result = -1;
-            while (analyze_jobs_.Count() > current_analyze_index_)
+            int current_index = 0;
+            while (analyze_jobs_.Count() > current_index)
             {
-                AnalyzeJob job = jobs[current_analyze_index_];
+                AnalyzeJob job = jobs[current_index];
                 Tuple<double, bool> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
                 double avg_ssim = tuple.Item1;
                 bool is_cancel = tuple.Item2;
@@ -102,8 +101,8 @@ namespace ShakaCallstackParser
                     break;
                 }
 
-                current_analyze_index_++;
-                if (jobs.Count() > current_analyze_index_)
+                current_index++;
+                if (current_index >= jobs.Count())
                 {
                     result = job.crf;
                     AnalyzeFinished();
@@ -120,7 +119,6 @@ namespace ShakaCallstackParser
         private void AnalyzeFinished()
         {
             analyze_jobs_.Clear();
-            current_analyze_index_ = -1;
             is_analyzing_ = false;
         }
 
@@ -132,15 +130,13 @@ namespace ShakaCallstackParser
 
         private class AnalyzeJob
         {
-            public AnalyzeJob(int _index, string _path, int _thread_num, int _crf, List<AnalyzeTimeSelector.TimePair> time_list)
+            public AnalyzeJob(string _path, int _thread_num, int _crf, List<AnalyzeTimeSelector.TimePair> time_list)
             {
-                index = _index;
                 path = _path;
                 thread_num = _thread_num;
                 crf = _crf;
                 time_pair_list = time_list;
             }
-            public int index;
             public string path;
             public int thread_num;
             public int crf;

@@ -124,7 +124,6 @@ namespace ShakaCallstackParser
                 // Log
                 string msg = TAG + "OnFinished : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result;
                 Loger.Write(msg);
-                Loger.Write("");
             }
 
             CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
@@ -149,9 +148,6 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write(TAG + "OnEncodeCanceled : Exception:");
-                Loger.Write(e.ToString());
-                Loger.Write("");
             }
             finally
             {
@@ -175,9 +171,6 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write(TAG + "OnWindowClosed : Exception:");
-                Loger.Write(e.ToString());
-                Loger.Write("");
             }
             finally
             {
