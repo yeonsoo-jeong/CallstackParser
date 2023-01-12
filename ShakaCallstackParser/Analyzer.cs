@@ -82,10 +82,12 @@ namespace ShakaCallstackParser
             while (analyze_jobs_.Count() > current_index)
             {
                 AnalyzeJob job = jobs[current_index];
-                Tuple<double, bool> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
+                Tuple<double, long, int> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
                 double avg_ssim = tuple.Item1;
-                bool is_cancel = tuple.Item2;
-                
+                long size_sum = tuple.Item2;
+                int size_sec = tuple.Item3;
+                Loger.Write(TAG + "CalculateAverageSSIM : size_sum = " + size_sum + ", size_second = " + size_sec);
+
                 if (is_canceled_ || avg_ssim < 0)
                 {
                     break;

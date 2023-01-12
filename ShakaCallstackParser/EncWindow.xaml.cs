@@ -25,6 +25,8 @@ namespace ShakaCallstackParser
         const string kBtnLabelEncode = "Encode";
         const string kBtnLabelCancel = "Cancel";
 
+        bool is_window_closed_ = false;
+
         public static string[] kCpuUsageItems =
         {
             "Full",
@@ -220,6 +222,10 @@ namespace ShakaCallstackParser
 
         private void OnEncodeCanceled(int index)
         {
+            if (is_window_closed_)
+            {
+                return;
+            }
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
@@ -274,6 +280,7 @@ namespace ShakaCallstackParser
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            is_window_closed_ = true;
             enc_manager_.OnWindowClosed();
         }
 
