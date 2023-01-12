@@ -58,10 +58,11 @@
         </ListView>
         <Button x:Name="BtnEncodeCancel" Content="Encode" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
         <Button x:Name="BtnRemoveDone" Content="Rm" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
-        <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="104,54,0,0" Text="" VerticalAlignment="Top" Width="499" IsReadOnly="True"/>
-        <Button x:Name="BtnOpenDestPath" Content="open" HorizontalAlignment="Left" Margin="725,57,0,0" VerticalAlignment="Top" Width="75" Click="BtnOpenDestPath_Click"/>
+        <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="" VerticalAlignment="Top" Width="458" IsReadOnly="True"/>
+        <Button x:Name="BtnChangeDestPath" Content="Change" HorizontalAlignment="Left" Margin="546,54,0,0" VerticalAlignment="Top" Width="54" Click="BtnChangeDestPath_Click"/>
         <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="624,54,0,0" VerticalAlignment="Top" Width="80" SelectionChanged="ComboUsageAll_SelectionChanged"/>
+        <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
+        <Button x:Name="BtnOpenSavedFolder" Content="Open" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" Click="BtnOpenSavedFolder_Click"/>
 
     </Grid>
 </Window>

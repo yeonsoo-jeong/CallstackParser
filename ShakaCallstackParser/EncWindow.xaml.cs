@@ -113,7 +113,7 @@ namespace ShakaCallstackParser
 
             BtnEncodeCancel.Content = kBtnLabelCancel;
             BtnRemoveDone.IsEnabled = false;
-            BtnOpenDestPath.IsEnabled = false;
+            BtnChangeDestPath.IsEnabled = false;
             ListView1.Items.Refresh();
 
             Task.Delay(1000).ContinueWith(_ =>
@@ -132,7 +132,7 @@ namespace ShakaCallstackParser
             enc_manager_.OnEncodeCanceled();
             BtnEncodeCancel.Content = kBtnLabelEncode;
             BtnRemoveDone.IsEnabled = true;
-            BtnOpenDestPath.IsEnabled = true;
+            BtnChangeDestPath.IsEnabled = true;
 
             Task.Delay(1000).ContinueWith(_ =>
             {
@@ -261,7 +261,7 @@ namespace ShakaCallstackParser
             {
                 BtnEncodeCancel.Content = kBtnLabelEncode;
                 BtnRemoveDone.IsEnabled = true;
-                BtnOpenDestPath.IsEnabled = true;
+                BtnChangeDestPath.IsEnabled = true;
                 Loger.Write(TAG + "OnAllEncodeFinished" + "\r\n");
             });
         }
@@ -322,7 +322,7 @@ namespace ShakaCallstackParser
             ListView1.Items.Refresh();
         }
 
-        private void BtnOpenDestPath_Click(object sender, RoutedEventArgs e)
+        private void BtnChangeDestPath_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new FolderPicker();
             //dlg.InputPath = @"c:\windows\system32";
@@ -337,6 +337,11 @@ namespace ShakaCallstackParser
         {
             enc_item_manager_.OnCpuUsageChanged((sender as ComboBox).SelectedItem.ToString());
             ListView1.Items.Refresh();
+        }
+
+        private void BtnOpenSavedFolder_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(TextBoxDestPath.Text);
         }
     }
 }
