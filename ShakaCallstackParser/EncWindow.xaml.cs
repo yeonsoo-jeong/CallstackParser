@@ -324,11 +324,12 @@ namespace ShakaCallstackParser
 
         private void BtnOpenDestPath_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog();
-            if (dialog.ShowDialog(this).GetValueOrDefault())
+            var dlg = new FolderPicker();
+            //dlg.InputPath = @"c:\windows\system32";
+            if (dlg.ShowDialog() == true)
             {
-                TextBoxDestPath.Text = dialog.SelectedPath;
-                ConfigManager.SetDestPath(dialog.SelectedPath);
+                TextBoxDestPath.Text = dlg.ResultPath;
+                ConfigManager.SetDestPath(dlg.ResultPath);
             }
         }
 
@@ -339,3 +340,5 @@ namespace ShakaCallstackParser
         }
     }
 }
+
+
