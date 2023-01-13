@@ -80,21 +80,15 @@ namespace ShakaCallstackParser
             }
             else
             {
-                const int max = 10;
-                int count = 2;
-                while (count < max)
-                {
-                    if (input_duration < 600 * count++)
-                    {
-                        break;
-                    }
-                }
+                int input_minute = input_duration / 60;
+                int analyze_num = Math.Min(input_minute / 10 + 2, 10);
 
                 int base_sec = (input_duration - analyze_duration) / 2;
-                int denominator = count + 1;
-                for (int i = 1; i <= count; i++)
+                double denominator = analyze_num + 1;
+                for (int i = 1; i <= analyze_num; i++)
                 {
-                    result.Add(new TimePair(base_sec * (i / denominator), analyze_duration));
+                    int start = (int)(base_sec * ((double)i / denominator));
+                    result.Add(new TimePair(start, analyze_duration));
                 }
             }
             return result;
