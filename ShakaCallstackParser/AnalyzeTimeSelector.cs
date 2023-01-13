@@ -87,7 +87,7 @@ namespace ShakaCallstackParser
                 double denominator = analyze_num + 1;
                 for (int i = 1; i <= analyze_num; i++)
                 {
-                    int start = (int)(base_sec * ((double)i / denominator));
+                    int start = (int)(base_sec * (i / denominator));
                     result.Add(new TimePair(start, analyze_duration));
                 }
             }
