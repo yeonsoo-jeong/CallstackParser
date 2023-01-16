@@ -81,7 +81,7 @@ namespace ShakaCallstackParser
             else
             {
                 int input_minute = input_duration / 60;
-                int analyze_num = Math.Min(input_minute / 10 + 2, 10);
+                int analyze_num = Math.Min(input_minute / 10 + 2, 5);
 
                 int base_sec = (input_duration - analyze_duration) / 2;
                 double denominator = analyze_num + 1;
