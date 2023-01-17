@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -98,7 +99,11 @@ namespace ShakaCallstackParser
                 int thread_num = GetCoreNumFromCpuUsage(enc_list_item.cpu_usage_selected);
                 Result result;
 
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 result = Analyze(index, path, thread_num, out int crf);
+                stopwatch.Stop();
+                Loger.Write(TAG + "Start : Analyzation Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
                 {
                     break;
@@ -107,8 +112,11 @@ namespace ShakaCallstackParser
                 {
                     continue;
                 }
-                
+
+                stopwatch.Start();
                 result = Encode(index, path, out_directory, thread_num, crf);
+                stopwatch.Stop();
+                Loger.Write(TAG + "Start : Encoding Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
                 {
                     break;
@@ -122,7 +130,7 @@ namespace ShakaCallstackParser
             if (!is_canceled_)
             {
                 callbacks_.all_encode_finished();
-            } 
+            }
             is_encoding_ = false;
 
             return;

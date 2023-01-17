@@ -42,6 +42,10 @@ namespace ShakaCallstackParser
             analyze_jobs_ = new List<AnalyzeJob>();
 
             Tuple<long, int> video_info = FFmpegUtil.GetSizeDurationSec(path);
+            if (is_canceled_)
+            {
+                return AnalyzerResult.fail;
+            }
             long inp_size = video_info.Item1;
             int inp_seconds = video_info.Item2;
             if (inp_size < 0 || inp_seconds < 0)
@@ -68,6 +72,11 @@ namespace ShakaCallstackParser
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
 
             Tuple<int, int, long> result = CalculateAverageSSIM(analyze_jobs_);
+            if (is_canceled_)
+            {
+                return AnalyzerResult.fail;
+            }
+
             crf = result.Item1;
             int result_seconds = result.Item2;
             long result_size = result.Item3;
@@ -78,7 +87,6 @@ namespace ShakaCallstackParser
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + ", expected_size=" + expect_size);
                 return AnalyzerResult.size_over;
             }
-
             if (crf < 0)
             {
                 return AnalyzerResult.fail;

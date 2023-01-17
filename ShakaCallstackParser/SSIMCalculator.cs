@@ -42,7 +42,6 @@ namespace ShakaCallstackParser
                     break;
                 }
 
-
                 Tuple<double, long> result = CalculateSSIM(path, thread_num, crf, time_list[i].start_time, time_list[i].duration);
                 double ssim_result = result.Item1;
                 long sz = result.Item2;
