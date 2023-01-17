@@ -106,6 +106,7 @@ namespace ShakaCallstackParser
                     item.path = file;
                     item.cpu_usage = new List<string>(EncWindow.kCpuUsageItems);
                     item.cpu_usage_selected = cpu_usage;
+                    item.progress_color = "LimeGreen";
                     enc_items_.Add(item);
                 }
 
@@ -174,6 +175,7 @@ namespace ShakaCallstackParser
         public string number { get; set; }
         public string path { get; set; }
         public int progress { get; set; }
+        public string progress_color { get; set; }
 
         public List<string> cpu_usage { get; set; }
 

@@ -180,6 +180,8 @@ namespace ShakaCallstackParser
                 {
                     enc_items[index].note = msg;
                 }
+                enc_items[index].progress = 100;
+                enc_items[index].progress_color = "Red";
                 enc_items[index].status = EncListItems.Status.fail;
                 ListView1.Items.Refresh();
                 Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(enc_items[index].path) + "\r\n");
@@ -240,13 +242,19 @@ namespace ShakaCallstackParser
             });
         }
 
-        private void OnEncodeFailed(int index, int result_code)
+        private void OnEncodeFailed(int index, int result_code, string msg)
         {
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Fail";
+                if (msg.Length > 0)
+                {
+                    enc_items[index].note = msg;
+                }
                 enc_items[index].status = EncListItems.Status.fail;
+                enc_items[index].progress = 100;
+                enc_items[index].progress_color = "Red";
                 ListView1.Items.Refresh();
                 Loger.Write(TAG + "OnEncodeFailed : " + Path.GetFileName(enc_items[index].path) + ", result_code=" + result_code);
             });

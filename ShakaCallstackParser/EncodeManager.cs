@@ -16,7 +16,7 @@ namespace ShakaCallstackParser
             public delegate void OnEncodeStarted(int index, int crf);
             public delegate void OnProgressChanged(int index, int percentage);
             public delegate void OnEncodeCanceled(int index);
-            public delegate void OnEncodeFailed(int index, int result_code);
+            public delegate void OnEncodeFailed(int index, int result_code, string msg);
             public delegate void OnEncodeFinished(int index);
             public delegate void OnAllEncodeFinished();
             public delegate void OnAnalyzeStarted(int index);
@@ -207,7 +207,7 @@ namespace ShakaCallstackParser
             }
             if (result_code != 0)
             {
-                callbacks_.encode_failed(index, result_code);
+                callbacks_.encode_failed(index, result_code, "Unexpected error occured.");
                 return Result.fail_continue;
             }
             callbacks_.encode_finished(index);

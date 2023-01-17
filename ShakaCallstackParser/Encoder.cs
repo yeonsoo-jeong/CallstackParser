@@ -117,17 +117,20 @@ namespace ShakaCallstackParser
             {
                 return -1;
             }
-
-
-
+            if (result_code != 0)
             {
-                // Log
+                EncodingFileManager.EncodingFinished(encoding_path);
+                string msg = TAG + "Encode : Encoding failed. name=" + Path.GetFileName(inpPath) + ", result code = " + result_code;
+                Loger.Write(msg);
+            }
+            else
+            {
                 Tuple<long, int> res = FFmpegUtil.GetSizeDurationSec(encoding_path);
                 string msg = TAG + "Encode : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result + ", size=" + res.Item1;
                 Loger.Write(msg);
-            }
 
-            CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
+                CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
+            }
 
             is_encoding_ = false;
 

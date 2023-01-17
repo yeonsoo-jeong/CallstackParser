@@ -33,7 +33,7 @@
                         <GridViewColumn Header="Progress" Width="120" >
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"/>
+                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"  Foreground="{Binding Path=progress_color}"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
