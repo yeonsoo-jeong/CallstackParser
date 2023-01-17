@@ -205,7 +205,7 @@ namespace ShakaCallstackParser
                 callbacks_.encode_canceled(index);
                 return Result.fail_stop;
             }
-            if (result_code < 0)
+            if (result_code != 0)
             {
                 callbacks_.encode_failed(index, result_code);
                 return Result.fail_continue;
