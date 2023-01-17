@@ -60,7 +60,7 @@ namespace ShakaCallstackParser
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + " -map 0 -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
                 enc_process_.StartInfo.WorkingDirectory = "";
                 enc_process_.StartInfo.CreateNoWindow = true;
                 enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
