@@ -20,7 +20,7 @@ namespace ShakaCallstackParser
             public delegate void OnAllEncodeFinished();
             public delegate void OnAnalyzeStarted(int index);
             public delegate void OnAnalyzeCanceled(int index);
-            public delegate void OnAnalyzeFailed(int index);
+            public delegate void OnAnalyzeFailed(int index, string msg);
             public delegate void OnAnalyzeFinished(int index, int crf);
             
             public Callbacks(OnEncodeStarted es, OnProgressChanged pc, OnEncodeCanceled ec, OnEncodeFailed ef, OnEncodeFinished efin, OnAllEncodeFinished aef, 
@@ -99,51 +99,25 @@ namespace ShakaCallstackParser
                 Result result;
 
                 result = Analyze(index, path, thread_num, out int crf);
-                if (result == Result.cancel)
+                if (result == Result.fail_stop)
                 {
                     break;
                 }
-                else if (result == Result.fail)
+                else if (result == Result.fail_continue)
                 {
                     continue;
                 }
                 
                 result = Encode(index, path, out_directory, thread_num, crf);
-                if (result == Result.cancel)
+                if (result == Result.fail_stop)
                 {
                     break;
                 }
-                else if (result == Result.fail)
+                else if (result == Result.fail_continue)
                 {
                     continue;
                 }
             }
-
-            #region original code
-            //while (enc_jobs_.Count() > current_enc_index_)
-            //{
-            //    enc_index = jobs[current_enc_index_].index;
-            //    string path = jobs[current_enc_index_].path;
-            //    int thread_num = jobs[current_enc_index_].thread_num;
-
-            //    callbacks_.analyze_started(enc_index);
-            //    int crf = analyzer_.Analyze(enc_index, path, thread_num);
-            //    if (is_canceled_)
-            //    {
-            //        break;
-            //    }
-            //    callbacks_.analyze_finished(enc_index, crf);
-
-            //    callbacks_.encode_started(enc_index, crf);
-            //    int result_code = encoder_.Encode(enc_index, path, out_directory_, thread_num, crf);
-            //    if (is_canceled_)
-            //    {
-            //        break;
-            //    }
-            //    callbacks_.encode_finished(enc_index, result_code);
-            //    current_enc_index_++;
-            //}
-            #endregion
 
             if (!is_canceled_)
             {
@@ -185,16 +159,29 @@ namespace ShakaCallstackParser
         private Result Analyze(int index, string path, int thread_num, out int crf)
         {
             callbacks_.analyze_started(index);
-            crf = analyzer_.Analyze(path, thread_num);
+
+            Analyzer.AnalyzerResult result = analyzer_.Analyze(path, thread_num, out crf);
             if (is_canceled_)
             {
-                callbacks_.encode_canceled(index);
-                return Result.cancel;
+                callbacks_.analyze_canceled(index);
+                return Result.fail_stop;
+            }
+            switch (result)
+            {
+                case Analyzer.AnalyzerResult.already_analyzing:
+                    callbacks_.analyze_failed(index, "Error: Already analyzation started.");
+                    return Result.fail_stop;
+                case Analyzer.AnalyzerResult.fail:
+                    callbacks_.analyze_failed(index, "Unexpected error occured.");
+                    return Result.fail_continue;
+                case Analyzer.AnalyzerResult.size_over:
+                    callbacks_.analyze_failed(index, "It is not expected to decrease in size.");
+                    return Result.fail_continue;
             }
             if (crf < 0)
             {
-                callbacks_.analyze_failed(index);
-                return Result.fail;
+                callbacks_.analyze_failed(index, "Unexpected error occured.");
+                return Result.fail_continue;
             }
             callbacks_.analyze_finished(index, crf);
 
@@ -208,12 +195,12 @@ namespace ShakaCallstackParser
             if (is_canceled_)
             {
                 callbacks_.encode_canceled(index);
-                return Result.cancel;
+                return Result.fail_stop;
             }
             if (result_code < 0)
             {
                 callbacks_.encode_failed(index, result_code);
-                return Result.fail;
+                return Result.fail_continue;
             }
             callbacks_.encode_finished(index);
 
@@ -223,8 +210,8 @@ namespace ShakaCallstackParser
         private enum Result
         { 
             success,
-            fail,
-            cancel
+            fail_continue,
+            fail_stop,
         }
     }
 }

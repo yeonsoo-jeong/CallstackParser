@@ -14,7 +14,7 @@ namespace ShakaCallstackParser
 
         private const int kDefaultCrfValue = 28;
         private const double kTargetSSIMValue = 0.9870;
-        private const double kTargetSSIMRangeMin = 0.9869;
+        private const double kTargetSSIMRangeMin = 0.9865;
         private const double kTargetSSIMRangeMax = 0.9875;
 
         SSIMCalculator ssim_calculator_;
@@ -29,21 +29,30 @@ namespace ShakaCallstackParser
             ssim_calculator_ = new SSIMCalculator();
         }
 
-        public int Analyze(string path, int thread_num)
+        public AnalyzerResult Analyze(string path, int thread_num, out int crf)
         {
+            crf = -1;
+
             if (is_analyzing_)
             {
-                return -1;
+                return AnalyzerResult.already_analyzing;
             }
             is_analyzing_ = true;
             is_canceled_ = false;
             analyze_jobs_ = new List<AnalyzeJob>();
 
+            Tuple<long, int> video_info = FFmpegUtil.GetSizeDurationSec(path);
+            long inp_size = video_info.Item1;
+            int inp_seconds = video_info.Item2;
+            if (inp_size < 0 || inp_seconds < 0)
+            {
+                Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] size or seconds is negative. size=" + inp_size + ", seconds=" + inp_seconds);
+                return AnalyzerResult.fail;
+            }
             AnalyzeTimeSelector selector = new AnalyzeTimeSelector();
-            List<AnalyzeTimeSelector.TimePair> time_pair = selector.Calculate(path);
+            List<AnalyzeTimeSelector.TimePair> time_pair = selector.Calculate(inp_seconds);
             {
                 // Log
-
                 string msg = TAG + "Analyze : " + Path.GetFileName(path) + " time: ";
                 for (int i = 0; i < time_pair.Count(); i++)
                 {
@@ -52,13 +61,30 @@ namespace ShakaCallstackParser
                 Loger.Write(msg);
             }
 
-            // Should be descending order!
+            // Must be descending order!
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 28, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 27, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 26, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
 
-            return CalculateAverageSSIM(analyze_jobs_);
+            Tuple<int, int, long> result = CalculateAverageSSIM(analyze_jobs_);
+            crf = result.Item1;
+            int result_seconds = result.Item2;
+            long result_size = result.Item3;
+            long expect_size = GetExpectedSize(inp_seconds, inp_size, result_seconds, result_size);
+            Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] input_size=" + inp_size + ", expected_size = " + expect_size);
+            if (inp_size <= expect_size)
+            {
+                Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + ", expected_size=" + expect_size);
+                return AnalyzerResult.size_over;
+            }
+
+            if (crf < 0)
+            {
+                return AnalyzerResult.fail;
+            }
+
+            return AnalyzerResult.success;
         }
 
         public void OnEncodeCanceled()
@@ -75,18 +101,20 @@ namespace ShakaCallstackParser
             ssim_calculator_.OnWindowClosed();
         }
 
-        private int CalculateAverageSSIM(List<AnalyzeJob> jobs)
+        private Tuple<int, int, long> CalculateAverageSSIM(List<AnalyzeJob> jobs)
         {
-            int result = -1;
+            int result_crf = -1;
+            int result_seconds = -1;
+            long result_size = -1;
             int current_index = 0;
             while (analyze_jobs_.Count() > current_index)
             {
                 AnalyzeJob job = jobs[current_index];
-                Tuple<double, long, int> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
+                Tuple<double, int, long> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
                 double avg_ssim = tuple.Item1;
-                long size_sum = tuple.Item2;
-                int size_sec = tuple.Item3;
-                Loger.Write(TAG + "CalculateAverageSSIM : size_sum = " + size_sum + ", size_second = " + size_sec);
+                result_seconds = tuple.Item2;
+                result_size = tuple.Item3;
+                Loger.Write(TAG + "CalculateAverageSSIM : size_sum = " + result_size + ", size_second = " + result_seconds);
 
                 if (is_canceled_ || avg_ssim < 0)
                 {
@@ -95,7 +123,7 @@ namespace ShakaCallstackParser
 
                 if (IsValidSSIM(avg_ssim))
                 {
-                    result = job.crf;
+                    result_crf = job.crf;
                     AnalyzeFinished();
                     {
                         Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
@@ -106,7 +134,7 @@ namespace ShakaCallstackParser
                 current_index++;
                 if (current_index >= jobs.Count())
                 {
-                    result = job.crf;
+                    result_crf = job.crf;
                     AnalyzeFinished();
                     {
                         Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
@@ -115,7 +143,7 @@ namespace ShakaCallstackParser
                 }
             }
             
-            return result;
+            return new Tuple<int, int, long>(result_crf, result_seconds, result_size);
         }
 
         private void AnalyzeFinished()
@@ -128,6 +156,11 @@ namespace ShakaCallstackParser
         {
             //return ssim >= kTargetSSIMRangeMin && ssim <= kTargetSSIMRangeMax;
             return ssim >= kTargetSSIMRangeMin;
+        }
+
+        private long GetExpectedSize(int inp_duration_sec, long inp_size, int result_sec, long result_size)
+        {
+            return (long)((double)inp_duration_sec / (double)result_sec * (double)result_size);
         }
 
         private class AnalyzeJob
@@ -143,6 +176,14 @@ namespace ShakaCallstackParser
             public int thread_num;
             public int crf;
             public List<AnalyzeTimeSelector.TimePair> time_pair_list;
+        }
+
+        public enum AnalyzerResult
+        { 
+            success,
+            fail,
+            already_analyzing,
+            size_over
         }
     }
 }

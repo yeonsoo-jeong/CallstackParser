@@ -11,50 +11,15 @@ namespace ShakaCallstackParser
     class AnalyzeTimeSelector
     {
         const int kAnalyzeDuration = 10;
+
         public AnalyzeTimeSelector()
         {
 
         }
 
-        public List<TimePair> Calculate(string path)
+        public List<TimePair> Calculate(int duration_seconds)
         {
-            int duration_sec = GetDurationSec(path);
-            if (duration_sec < 0)
-            {
-                return new List<TimePair>();
-            }
-            return CalculateAnalyzeTime(duration_sec, kAnalyzeDuration);
-        }
-
-        private int GetDurationSec(string path)
-        {
-            using (Process p = new Process())
-            {
-                p.EnableRaisingEvents = true;
-                p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + path + "\" -c copy -f null /dev/null";
-                p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.RedirectStandardError = true;
-                p.Start();
-                
-                string readStr = "";
-                int duration_seconds = -1;
-                while ((readStr = p.StandardError.ReadLine()) != null)
-                {
-                    if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
-                    {
-                        string substr = readStr.Substring(12, 11);
-                        duration_seconds = CalculateSeconds(substr);
-                        break;
-                    }
-                    System.Threading.Thread.Sleep(10);
-                }
-
-                return duration_seconds;
-            }
+            return CalculateAnalyzeTime(duration_seconds, kAnalyzeDuration);
         }
 
         private List<TimePair> CalculateAnalyzeTime(int input_duration, int analyze_duration)
@@ -62,7 +27,7 @@ namespace ShakaCallstackParser
             List<TimePair> result = new List<TimePair>();
             if (input_duration <= analyze_duration)
             {
-                result.Add(new TimePair(0, analyze_duration));
+                result.Add(new TimePair(0, input_duration));
             } 
             else if (input_duration < 60)
             {
@@ -92,14 +57,6 @@ namespace ShakaCallstackParser
                 }
             }
             return result;
-        }
-
-        private int CalculateSeconds(string time_str)
-        {
-            int hour = int.Parse(time_str.Substring(0, 2));
-            int minute = int.Parse(time_str.Substring(3, 2));
-            int second = int.Parse(time_str.Substring(6, 2));
-            return second + (minute * 60) + (hour * 3600);
         }
 
         public class TimePair

@@ -101,7 +101,7 @@ namespace ShakaCallstackParser
                         }
                     }
 
-                    double ssim = SSIMCalculator.ParseSSIM(readStr);
+                    double ssim = FFmpegUtil.ParseSSIM(readStr);
                     if (ssim >= 0)
                     {
                         result = ssim;
@@ -122,7 +122,8 @@ namespace ShakaCallstackParser
 
             {
                 // Log
-                string msg = TAG + "OnFinished : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result;
+                Tuple<long, int> res = FFmpegUtil.GetSizeDurationSec(encoding_path);
+                string msg = TAG + "Encode : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result + ", size=" + res.Item1;
                 Loger.Write(msg);
             }
 

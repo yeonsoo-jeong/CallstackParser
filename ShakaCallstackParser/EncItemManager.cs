@@ -142,6 +142,7 @@ namespace ShakaCallstackParser
             analyzing,
             encoding,
             success,
+            cancel,
             fail
         }
 
@@ -154,7 +155,7 @@ namespace ShakaCallstackParser
 
         public static bool IsStatusShouldEncode(Status status)
         {
-            if (status == Status.none || status == Status.fail)
+            if (status == Status.none || status == Status.cancel)
             {
                 return true;
             }

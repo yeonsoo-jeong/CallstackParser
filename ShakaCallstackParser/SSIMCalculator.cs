@@ -22,73 +22,13 @@ namespace ShakaCallstackParser
         {
         }
 
-        public static double ParseSSIM(string line)
-        {
-            double ret = -1;
-            string findStr = "SSIM Mean Y:";
-            int index = line.IndexOf(findStr);
-            if (index >= 0)
-            {
-                int start = index + findStr.Length;
-                string substr = line.Substring(start);
-                var arr = substr.Split(' ');
-                double ssim;
-                if (Double.TryParse(arr[0], out ssim))
-                {
-                    ret = ssim;
-                }
-            }
-            return ret;
-        }
-
-        public static long ParseSize(string line)
-        {
-            long ret = -1;
-            string video_str = "video:";
-            string audio_str = "audio:";
-            int video_index = line.IndexOf(video_str);
-            int audio_index = line.IndexOf(audio_str);
-            if (video_index >= 0 && audio_index >= 0)
-            {
-                int video_start = video_index + video_str.Length;
-                int audio_start = audio_index + audio_str.Length;
-                int video_end = line.IndexOf("kB", video_start);
-                int audio_end = line.IndexOf("kB", audio_start);
-                int video_length = video_end - video_start;
-                int audio_length = audio_end - audio_start;
-                if (video_length > 0 && audio_length > 0)
-                {
-                    string video_size_str = line.Substring(video_start, video_length);
-                    string audio_size_str = line.Substring(audio_start, audio_length);
-
-                    int video_size = -1;
-                    if (int.TryParse(video_size_str, out int v_size))
-                    {
-                        video_size = v_size;
-                    }
-
-                    int audio_size = -1;
-                    if (int.TryParse(audio_size_str, out int a_size))
-                    {
-                        audio_size = a_size;
-                    }
-
-                    if (video_size >= 0 && audio_size >= 0)
-                    {
-                        ret = video_size + audio_size;
-                    }
-                }
-            }
-            return ret;
-        }
-
-        public Tuple<double, long, int> Calculate(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        public Tuple<double, int, long> Calculate(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
             is_canceled_ = false;
             return CalculateAverageSSIM(path, thread_num, crf, time_list);
         }
 
-        private Tuple<double, long, int> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        private Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
             double ret = -1;
             double ssim_sum = 0;
@@ -134,7 +74,7 @@ namespace ShakaCallstackParser
                 ret = ssim_sum / count;
             }
 
-            return new Tuple<double, long, int>(ret, size, size_sec);
+            return new Tuple<double, int, long>(ret, size_sec, size);
         }
 
         public void OnEncodeCanceled()
@@ -192,13 +132,13 @@ namespace ShakaCallstackParser
                 string readStr = "";
                 while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                 {
-                    long sz = ParseSize(readStr);
+                    long sz = FFmpegUtil.ParseSize(readStr);
                     if (sz >= 0)
                     {
                         size = sz;
                     }
 
-                    double result = ParseSSIM(readStr);
+                    double result = FFmpegUtil.ParseSSIM(readStr);
                     if (result >= 0)
                     {
                         ssim = result;

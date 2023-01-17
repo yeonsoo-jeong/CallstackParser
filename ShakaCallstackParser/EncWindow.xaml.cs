@@ -164,18 +164,22 @@ namespace ShakaCallstackParser
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Canceled";
-                enc_items[index].status = EncListItems.Status.fail;
+                enc_items[index].status = EncListItems.Status.cancel;
                 ListView1.Items.Refresh();
                 Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(enc_items[index].path) + "\r\n");
             });
         }
 
-        private void OnAnalyzeFailed(int index)
+        private void OnAnalyzeFailed(int index, string msg)
         {
             Dispatcher.Invoke(() =>
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
-                enc_items[index].note = "Failed";
+                enc_items[index].note = "Analyzation Failed";
+                if (msg.Length > 0)
+                {
+                    enc_items[index].note = msg;
+                }
                 enc_items[index].status = EncListItems.Status.fail;
                 ListView1.Items.Refresh();
                 Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(enc_items[index].path) + "\r\n");
@@ -230,7 +234,7 @@ namespace ShakaCallstackParser
             {
                 List<EncListItems> enc_items = enc_item_manager_.GetEncItems();
                 enc_items[index].note = "Canceled";
-                enc_items[index].status = EncListItems.Status.fail;
+                enc_items[index].status = EncListItems.Status.cancel;
                 ListView1.Items.Refresh();
                 Loger.Write(TAG + "OnEncodeCanceled : " + Path.GetFileName(enc_items[index].path) + "\r\n");
             });
