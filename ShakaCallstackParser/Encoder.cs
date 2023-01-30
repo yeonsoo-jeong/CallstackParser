@@ -51,6 +51,44 @@ namespace ShakaCallstackParser
 
             string encoding_path = "";
 
+            MediaInfoManager media_info_manager = new MediaInfoManager();
+            Tuple<int, int, int> num_tuple = media_info_manager.GetStreamNum(inpPath);
+            int video_num = num_tuple.Item1;
+            int audio_num = num_tuple.Item2;
+            int text_num = num_tuple.Item3;
+            if (video_num <= 0)
+            {
+                Loger.Write(TAG + "Start : Video is no exist");
+                return -1;
+            }
+
+            string interlace_option = "";
+            string video_map_option = "";
+            string audio_map_option = "";
+            string text_map_option = "";
+            if (media_info_manager.IsInterlaced(inpPath))
+            {
+                interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
+                for (int i = 1; i < video_num; i++)
+                {
+                    video_map_option = " -map 0:v:" + i;
+                }
+            }
+            else
+            {
+                video_map_option = " -map 0:v";
+            }
+            
+            if (audio_num > 0)
+            {
+                audio_map_option = " -map 0:a";
+            }
+
+            if (text_num > 0)
+            {
+                text_map_option = " -map 0:s";
+            }
+
             double result = -1.0f;
             using (enc_process_ = new Process())
             {
@@ -60,7 +98,10 @@ namespace ShakaCallstackParser
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + " -map 0 -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + interlace_option + video_map_option + audio_map_option + text_map_option + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+
+                Loger.Write(TAG + "Encode : option = " + enc_process_.StartInfo.Arguments);
+
                 enc_process_.StartInfo.WorkingDirectory = "";
                 enc_process_.StartInfo.CreateNoWindow = true;
                 enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -129,6 +170,7 @@ namespace ShakaCallstackParser
                 string msg = TAG + "Encode : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result + ", size=" + res.Item1;
                 Loger.Write(msg);
 
+                // Todo. if oversize, must notice to user
                 CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
             }
 

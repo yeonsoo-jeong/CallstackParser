@@ -66,6 +66,7 @@
     <Compile Include="FFmpegUtil.cs" />
     <Compile Include="FolderPicker.cs" />
     <Compile Include="Loger.cs" />
+    <Compile Include="MediaInfoManager.cs" />
     <Compile Include="SSIMCalculator.cs" />
     <Compile Include="VDVParser.cs" />
     <Compile Include="VideoDataViewWindow.xaml.cs">

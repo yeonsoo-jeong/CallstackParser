@@ -116,11 +116,19 @@ namespace ShakaCallstackParser
         {
             double ssim = -1;
             long size = 0;
+
+            string interlace_option = "";
+            MediaInfoManager media_info_manager = new MediaInfoManager();
+            if (media_info_manager.IsInterlaced(path))
+            {
+                interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
+            }
+
             using (enc_process_ = new Process())
             {
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + path + "\" -threads " + thread_num + " -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
+                enc_process_.StartInfo.Arguments = "-y -threads " + thread_num + " -i \"" + path + "\"" + interlace_option + " -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
                 enc_process_.StartInfo.WorkingDirectory = "";
                 enc_process_.StartInfo.CreateNoWindow = true;
                 enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
