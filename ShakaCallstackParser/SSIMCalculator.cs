@@ -37,12 +37,11 @@ namespace ShakaCallstackParser
             int size_sec = 0;
             for (int i = 0; i < time_list.Count(); i++)
             {
+                Tuple<double, long> result = CalculateSSIM(path, thread_num, crf, time_list[i].start_time, time_list[i].duration);
                 if (is_canceled_)
                 {
-                    break;
+                    return new Tuple<double, int, long>(-1, -1, -1);
                 }
-
-                Tuple<double, long> result = CalculateSSIM(path, thread_num, crf, time_list[i].start_time, time_list[i].duration);
                 double ssim_result = result.Item1;
                 long sz = result.Item2;
                 if (ssim_result > 0)
@@ -138,6 +137,11 @@ namespace ShakaCallstackParser
                 string readStr = "";
                 while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                 {
+                    if (is_canceled_)
+                    {
+                        break;
+                    }
+
                     long sz = FFmpegUtil.ParseSize(readStr);
                     if (sz >= 0)
                     {
