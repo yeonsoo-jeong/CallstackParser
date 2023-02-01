@@ -60,13 +60,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AnalyzeTimeSelector.cs" />
-    <Compile Include="ConfigManager.cs" />
+    <Compile Include="Common\ConfigManager.cs" />
     <Compile Include="EncItemManager.cs" />
-    <Compile Include="EncodingFileManager.cs" />
-    <Compile Include="FFmpegUtil.cs" />
+    <Compile Include="Common\EncodingFileManager.cs" />
+    <Compile Include="Common\FFmpegUtil.cs" />
     <Compile Include="FolderPicker.cs" />
     <Compile Include="Common\Loger.cs" />
-    <Compile Include="MediaInfoManager.cs" />
+    <Compile Include="Common\MediaInfoUtil.cs" />
     <Compile Include="SSIMCalculator.cs" />
     <Compile Include="VDVParser.cs" />
     <Compile Include="VideoDataViewWindow.xaml.cs">

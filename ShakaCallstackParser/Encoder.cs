@@ -38,7 +38,6 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
         }
 
-
         public int Encode(int index, string inpPath, string out_directory, int thread_num, int crf)
         {
             if (is_encoding_)
@@ -51,8 +50,7 @@ namespace ShakaCallstackParser
 
             string encoding_path = "";
 
-            MediaInfoManager media_info_manager = new MediaInfoManager();
-            Tuple<int, int, int> num_tuple = media_info_manager.GetStreamNum(inpPath);
+            Tuple<int, int, int> num_tuple = MediaInfoUtil.GetStreamNum(inpPath);
             int video_num = num_tuple.Item1;
             int audio_num = num_tuple.Item2;
             int text_num = num_tuple.Item3;
@@ -66,7 +64,7 @@ namespace ShakaCallstackParser
             string video_map_option = "";
             string audio_map_option = "";
             string text_map_option = "";
-            if (media_info_manager.IsInterlaced(inpPath))
+            if (MediaInfoUtil.IsInterlaced(inpPath))
             {
                 interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
                 for (int i = 1; i < video_num; i++)

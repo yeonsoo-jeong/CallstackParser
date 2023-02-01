@@ -118,8 +118,7 @@ namespace ShakaCallstackParser
             long size = 0;
 
             string interlace_option = "";
-            MediaInfoManager media_info_manager = new MediaInfoManager();
-            if (media_info_manager.IsInterlaced(path))
+            if (MediaInfoUtil.IsInterlaced(path))
             {
                 interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
             }
