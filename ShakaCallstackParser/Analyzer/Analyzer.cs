@@ -123,7 +123,7 @@ namespace ShakaCallstackParser
                 double avg_ssim = tuple.Item1;
                 result_seconds = tuple.Item2;
                 result_size = tuple.Item3;
-                Loger.Write(TAG + "CalculateAverageSSIM : size_sum = " + result_size + ", size_second = " + result_seconds);
+                Loger.Write(TAG + "AnalyzeJobs : size_sum = " + result_size + ", size_second = " + result_seconds);
 
                 if (is_canceled_ || avg_ssim < 0)
                 {

@@ -98,7 +98,7 @@ namespace ShakaCallstackParser
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -i \"" + inpPath + "\" -threads " + thread_num + interlace_option + video_map_option + audio_map_option + text_map_option + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+                enc_process_.StartInfo.Arguments = "-y -vsync passthrough -threads " + thread_num + " -i \"" + inpPath + "\"" + interlace_option + video_map_option + audio_map_option + text_map_option + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
 
                 Loger.Write(TAG + "Encode : option = " + enc_process_.StartInfo.Arguments);
 
