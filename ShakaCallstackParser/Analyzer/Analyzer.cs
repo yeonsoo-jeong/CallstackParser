@@ -55,8 +55,7 @@ namespace ShakaCallstackParser
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] size or seconds is negative. size=" + inp_size + ", seconds=" + inp_seconds);
                 return AnalyzerResult.fail;
             }
-            AnalyzeTimeSelector selector = new AnalyzeTimeSelector();
-            List<AnalyzeTimeSelector.TimePair> time_pair = selector.Calculate(inp_seconds);
+            List<AnalyzeTimeSelector.TimePair> time_pair = AnalyzeTimeSelector.Calculate(inp_seconds);
             {
                 // Log
                 string msg = TAG + "Analyze : " + Path.GetFileName(path) + " time: ";
@@ -73,7 +72,7 @@ namespace ShakaCallstackParser
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 26, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
 
-            Tuple<int, int, long> result = CalculateAverageSSIM(analyze_jobs_);
+            Tuple<int, int, long> result = AnalyzeJobs(analyze_jobs_);
             if (is_canceled_)
             {
                 return AnalyzerResult.fail;
@@ -111,7 +110,7 @@ namespace ShakaCallstackParser
             ssim_calculator_.OnWindowClosed();
         }
 
-        private Tuple<int, int, long> CalculateAverageSSIM(List<AnalyzeJob> jobs)
+        private Tuple<int, int, long> AnalyzeJobs(List<AnalyzeJob> jobs)
         {
             int result_crf = -1;
             int result_seconds = -1;

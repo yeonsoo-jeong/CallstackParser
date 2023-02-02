@@ -8,21 +8,16 @@ using System.Threading.Tasks;
 
 namespace ShakaCallstackParser
 {
-    class AnalyzeTimeSelector
+    static class AnalyzeTimeSelector
     {
         const int kAnalyzeDuration = 10;
 
-        public AnalyzeTimeSelector()
-        {
-
-        }
-
-        public List<TimePair> Calculate(int duration_seconds)
+        static public List<TimePair> Calculate(int duration_seconds)
         {
             return CalculateAnalyzeTime(duration_seconds, kAnalyzeDuration);
         }
 
-        private List<TimePair> CalculateAnalyzeTime(int input_duration, int analyze_duration)
+        static private List<TimePair> CalculateAnalyzeTime(int input_duration, int analyze_duration)
         {
             List<TimePair> result = new List<TimePair>();
             if (input_duration <= analyze_duration)
