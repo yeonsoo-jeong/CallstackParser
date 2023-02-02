@@ -22,14 +22,9 @@ namespace ShakaCallstackParser
         {
         }
 
-        public Tuple<double, int, long> Calculate(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        public Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
             is_canceled_ = false;
-            return CalculateAverageSSIM(path, thread_num, crf, time_list);
-        }
-
-        private Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
-        {
             double ret = -1;
             double ssim_sum = 0;
             int count = 0;
@@ -61,7 +56,7 @@ namespace ShakaCallstackParser
                         size += sz;
                         size_sec += time_list[i].duration;
                     }
-                    
+
 
                     count++;
                 }

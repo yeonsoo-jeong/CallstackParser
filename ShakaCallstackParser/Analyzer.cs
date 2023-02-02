@@ -76,12 +76,12 @@ namespace ShakaCallstackParser
             {
                 return AnalyzerResult.fail;
             }
-
+            
             crf = result.Item1;
             int result_seconds = result.Item2;
             long result_size = result.Item3;
             long expect_size = GetExpectedSize(inp_seconds, inp_size, result_seconds, result_size);
-            Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] input_size=" + inp_size + ", expected_size = " + expect_size);
+            Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] Selected crf = " + crf + " input_size =" + inp_size + ", expected_size = " + expect_size);
             if (inp_size <= expect_size)
             {
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + ", expected_size=" + expect_size);
@@ -118,7 +118,7 @@ namespace ShakaCallstackParser
             while (analyze_jobs_.Count() > current_index)
             {
                 AnalyzeJob job = jobs[current_index];
-                Tuple<double, int, long> tuple = ssim_calculator_.Calculate(job.path, job.thread_num, job.crf, job.time_pair_list);
+                Tuple<double, int, long> tuple = ssim_calculator_.CalculateAverageSSIM(job.path, job.thread_num, job.crf, job.time_pair_list);
                 double avg_ssim = tuple.Item1;
                 result_seconds = tuple.Item2;
                 result_size = tuple.Item3;
@@ -133,9 +133,6 @@ namespace ShakaCallstackParser
                 {
                     result_crf = job.crf;
                     AnalyzeFinished();
-                    {
-                        Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
-                    }
                     break;
                 }
 
@@ -144,9 +141,6 @@ namespace ShakaCallstackParser
                 {
                     result_crf = job.crf;
                     AnalyzeFinished();
-                    {
-                        Loger.Write(TAG + "CalculateAverageSSIM : selected crf = " + job.crf);
-                    }
                     break;
                 }
             }
