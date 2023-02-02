@@ -59,7 +59,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="AnalyzeTimeSelector.cs" />
+    <Compile Include="Analyzer\AnalyzeTimeSelector.cs" />
     <Compile Include="Common\ConfigManager.cs" />
     <Compile Include="EncItemManager.cs" />
     <Compile Include="Common\EncodingFileManager.cs" />
@@ -67,7 +67,7 @@
     <Compile Include="FolderPicker.cs" />
     <Compile Include="Common\Loger.cs" />
     <Compile Include="Common\MediaInfoUtil.cs" />
-    <Compile Include="SSIMCalculator.cs" />
+    <Compile Include="Analyzer\SSIMCalculator.cs" />
     <Compile Include="VDVParser.cs" />
     <Compile Include="VideoDataViewWindow.xaml.cs">
       <DependentUpon>VideoDataViewWindow.xaml</DependentUpon>
@@ -80,7 +80,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="Analyzer.cs" />
+    <Compile Include="Analyzer\Analyzer.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
