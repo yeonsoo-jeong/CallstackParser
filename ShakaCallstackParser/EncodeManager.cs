@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using YsCommon;
+
 namespace ShakaCallstackParser
 {
     class EncodeManager

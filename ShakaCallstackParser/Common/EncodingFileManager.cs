@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using System.IO;
 
-namespace ShakaCallstackParser
+namespace YsCommon
 {
     static class EncodingFileManager
     {
