@@ -23,8 +23,9 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="v_pts" DisplayMemberBinding="{Binding v_pts}" Width="400" />
-                        <GridViewColumn Header="a_pts" DisplayMemberBinding="{Binding a_pts}" Width="400" />
+                        <GridViewColumn Header="v_pts" DisplayMemberBinding="{Binding v_pts}" Width="200" />
+                        <GridViewColumn Header="a_pts" DisplayMemberBinding="{Binding a_pts}" Width="200" />
+                        <GridViewColumn Header="pict_type" DisplayMemberBinding="{Binding pict_type}" Width="200" />
                     </GridView.Columns>
                 </GridView>
             </ListView.View>

@@ -12,7 +12,7 @@ namespace ShakaCallstackParser
     {
         public class Callbacks
         {
-            public delegate void OnPTSParsed(string v_pts, string a_pts);
+            public delegate void OnPTSParsed(string v_pts, string a_pts, string pict_type);
             public Callbacks(OnPTSParsed f)
             {
                 parsed = f;
@@ -80,12 +80,12 @@ namespace ShakaCallstackParser
                                 bool is_parsed = false;
                                 if (result.media_type == "video")
                                 {
-                                    callbacks_.parsed(result.pts, "-1");
+                                    callbacks_.parsed(result.pts, "-1", result.pict_type);
                                     is_parsed = true;
                                 }
                                 else if (result.media_type == "audio")
                                 {
-                                    callbacks_.parsed("-1", result.pts);
+                                    callbacks_.parsed("-1", result.pts, "n");
                                     is_parsed = true;
                                 }
 
@@ -120,9 +120,11 @@ namespace ShakaCallstackParser
             const string kStreamIndex = "stream_index=";
             const string kMediaType = "media_type=";
             const string kPts = "pkt_pts="; // windows
+            const string kPictType = "pict_type=";
             int stream_index = -1;
             string media_type = "";
             string pts = "";
+            string pict_type = "";
             foreach (string data in frame_data)
             {
                 if (data.IndexOf(kStreamIndex) == 0)
@@ -137,9 +139,13 @@ namespace ShakaCallstackParser
                 {
                     pts = data.Substring(kPts.Length);
                 }
+                else if (data.IndexOf(kPictType) == 0)
+                {
+                    pict_type = data.Substring(kPictType.Length);
+                }
             }
 
-            return new Result(stream_index, media_type, pts);
+            return new Result(stream_index, media_type, pts, pict_type);
         }
 
         private void process_Exited(object sender, EventArgs e)
@@ -160,15 +166,17 @@ namespace ShakaCallstackParser
 
         class Result
         {
-            public Result(int _stream_index, string _media_type, string _pts)
+            public Result(int _stream_index, string _media_type, string _pts, string _pict_type)
             {
                 stream_index = _stream_index;
                 media_type = _media_type;
                 pts = _pts;
+                pict_type = _pict_type;
             }
             public int stream_index;
             public string media_type;
             public string pts;
+            public string pict_type;
         }
     }
 }
