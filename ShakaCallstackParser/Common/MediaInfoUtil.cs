@@ -61,6 +61,7 @@ namespace YsCommon
             int video_count = 0;
             int audio_count = 0;
             int text_count = 0;
+            path = "\"" + path + "\"";
             using (Process process = new Process())
             {
                 process.EnableRaisingEvents = true;

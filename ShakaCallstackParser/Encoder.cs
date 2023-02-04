@@ -40,65 +40,28 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
         }
 
-        public int Encode(int index, string inpPath, string out_directory, int thread_num, int crf)
+        public EncoderResult Encode(int index, string inpPath, string out_directory, int thread_num, int crf, out int ffmpeg_return_code, out double ret_ssim)
         {
+            ffmpeg_return_code = -1;
+            ret_ssim = -1;
             if (is_encoding_)
             {
-                return -1;
+                return EncoderResult.already_encoding;
             }
             is_encoding_ = true;
             is_canceled_ = false;
-            int result_code = -1;
 
-            string encoding_path = "";
+            long inp_size = GetFileSize(inpPath);
+            string encoding_path = out_directory + "\\" + kEncodingPrefix + Path.GetFileName(inpPath);
+            string encoding_option = GetEncodingOption(inpPath, encoding_path, thread_num, crf);
 
-            Tuple<int, int, int> num_tuple = MediaInfoUtil.GetStreamNum(inpPath);
-            int video_num = num_tuple.Item1;
-            int audio_num = num_tuple.Item2;
-            int text_num = num_tuple.Item3;
-            if (video_num <= 0)
-            {
-                Loger.Write(TAG + "Start : Video is no exist");
-                return -1;
-            }
-
-            string interlace_option = "";
-            string video_map_option = "";
-            string audio_map_option = "";
-            string text_map_option = "";
-            if (MediaInfoUtil.IsInterlaced(inpPath))
-            {
-                interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
-                for (int i = 1; i < video_num; i++)
-                {
-                    video_map_option = " -map 0:v:" + i;
-                }
-            }
-            else
-            {
-                video_map_option = " -map 0:v";
-            }
-            
-            if (audio_num > 0)
-            {
-                audio_map_option = " -map 0:a";
-            }
-
-            if (text_num > 0)
-            {
-                text_map_option = " -map 0:s";
-            }
-
-            double result = -1.0f;
             using (enc_process_ = new Process())
             {
-                encoding_path = out_directory + "\\" + kEncodingPrefix + Path.GetFileName(inpPath);
-
                 EncodingFileManager.EncodingStarted(encoding_path);
 
                 enc_process_.EnableRaisingEvents = true;
                 enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -vsync passthrough -threads " + thread_num + " -i \"" + inpPath + "\"" + interlace_option + video_map_option + audio_map_option + text_map_option + " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+                enc_process_.StartInfo.Arguments = encoding_option;
 
                 Loger.Write(TAG + "Encode : option = " + enc_process_.StartInfo.Arguments);
 
@@ -116,7 +79,8 @@ namespace ShakaCallstackParser
                 {
                     if (is_canceled_)
                     {
-                        return -1;
+                        is_encoding_ = false;
+                        return EncoderResult.fail;
                     }
 
                     if (duration_seconds == -1)
@@ -142,41 +106,93 @@ namespace ShakaCallstackParser
                         }
                     }
 
-                    double ssim = FFmpegUtil.ParseSSIM(readStr);
-                    if (ssim >= 0)
+                    double parse_ssim = FFmpegUtil.ParseSSIM(readStr);
+                    if (parse_ssim >= 0)
                     {
-                        result = ssim;
+                        ret_ssim = parse_ssim;
                     }
                     System.Threading.Thread.Sleep(10);
                 }
 
                 enc_process_.WaitForExit();
-                result_code = enc_process_.ExitCode;
+                ffmpeg_return_code = enc_process_.ExitCode;
             }
 
             if (is_canceled_)
             {
-                return -1;
+                is_encoding_ = false;
+                return EncoderResult.fail;
             }
-            if (result_code != 0)
+
+            EncoderResult ret = EncoderResult.success;
+            if (ffmpeg_return_code != 0)
             {
-                EncodingFileManager.EncodingFinished(encoding_path);
-                string msg = TAG + "Encode : Encoding failed. name=" + Path.GetFileName(inpPath) + ", result code = " + result_code;
-                Loger.Write(msg);
+                ret = EncoderResult.fail;
+                EncodingFileManager.DeleteAllTempFiles();
             }
             else
             {
-                Tuple<long, int> res = FFmpegUtil.GetSizeDurationSec(encoding_path);
-                string msg = TAG + "Encode : Encode Finished. name=" + Path.GetFileName(inpPath) + ", ssim=" + result + ", size=" + res.Item1;
-                Loger.Write(msg);
+                long enc_size = GetFileSize(encoding_path);
+                if (inp_size < enc_size)
+                {
+                    ret = EncoderResult.size_over;
+                    EncodingFileManager.DeleteAllTempFiles();
+                }
+                else
+                {
+                    CustomRename(Path.GetFileName(inpPath), encoding_path);
+                    EncodingFileManager.EncodingFinished(encoding_path);
+                }
+            }
+            
+            is_encoding_ = false;
+            return ret;
+        }
 
-                // Todo. if oversize, must notice to user
-                CustomRename(inpPath, Path.GetFileName(inpPath), encoding_path);
+        private string GetEncodingOption(string inpPath, string encoding_path, int thread_num, int crf)
+        {
+            Tuple<int, int, int> num_tuple = MediaInfoUtil.GetStreamNum(inpPath);
+            int video_num = num_tuple.Item1;
+            int audio_num = num_tuple.Item2;
+            int text_num = num_tuple.Item3;
+            if (video_num <= 0)
+            {
+                Loger.Write(TAG + "Start : Video is no exist");
+                return "";
             }
 
-            is_encoding_ = false;
+            string interlace_option = "";
+            string video_map_option = "";
+            string audio_map_option = "";
+            string text_map_option = "";
+            if (MediaInfoUtil.IsInterlaced(inpPath))
+            {
+                interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
+                for (int i = 1; i < video_num; i++)
+                {
+                    video_map_option = " -map 0:v:" + i;
+                }
+            }
+            else
+            {
+                video_map_option = " -map 0:v";
+            }
 
-            return result_code;
+            if (audio_num > 0)
+            {
+                audio_map_option = " -map 0:a";
+            }
+
+            if (text_num > 0)
+            {
+                text_map_option = " -map 0:s";
+            }
+
+            string option = "-y -vsync passthrough -threads " + thread_num +
+                " -i \"" + inpPath + "\"" + interlace_option + video_map_option + audio_map_option + text_map_option +
+                " -c:a copy -c:s copy -c:v h264 -ssim 1 -crf " + crf + " \"" + encoding_path + "\"";
+
+            return option;
         }
 
         public void OnEncodeCanceled()
@@ -197,7 +213,6 @@ namespace ShakaCallstackParser
             }
             finally
             {
-                is_encoding_ = false;
                 EncodingFileManager.DeleteAllTempFiles();
             }
         }
@@ -220,7 +235,6 @@ namespace ShakaCallstackParser
             }
             finally
             {
-                is_encoding_ = false;
                 EncodingFileManager.DeleteAllTempFiles();
             }
         }
@@ -239,27 +253,21 @@ namespace ShakaCallstackParser
             return second + (minute * 60) + (hour * 3600);
         }
 
-        private static void CustomRename(string inp_path, string inp_name, string enc_path)
+        private static long GetFileSize(string path)
+        {
+            if (File.Exists(path))
+            {
+                FileInfo info = new FileInfo(path);
+                return info.Length;
+            }
+            return 0;
+        }
+
+        private static void CustomRename(string inp_name, string enc_path)
         {
             if (File.Exists(enc_path))
             {
                 string base_directory = Path.GetDirectoryName(enc_path) + "\\";
-                if (File.Exists(inp_path))
-                {
-                    FileInfo info = new FileInfo(inp_path);
-                    long inp_size = info.Length;
-                    info = new FileInfo(enc_path);
-                    long enc_size = info.Length;
-                    if (enc_size > inp_size)
-                    {
-                        string oversize_out_name = base_directory + kEncOversizePrefix + inp_name;
-                        File.Copy(inp_path, oversize_out_name);
-                        File.Delete(enc_path);
-                        EncodingFileManager.EncodingFinished(enc_path);
-                        return;
-                    }
-                }
-
                 string out_name = base_directory + kEncSuccessPrefix + inp_name;
                 if (File.Exists(out_name))
                 {
@@ -270,7 +278,6 @@ namespace ShakaCallstackParser
                         if (!File.Exists(out_name))
                         {
                             File.Move(enc_path, out_name);
-                            EncodingFileManager.EncodingFinished(enc_path);
                             break;
                         }
                     }
@@ -278,18 +285,20 @@ namespace ShakaCallstackParser
                 else
                 {
                     File.Move(enc_path, out_name);
-                    EncodingFileManager.EncodingFinished(enc_path);
-                }
-            } 
-            else
-            {
-                {
-                    // Log
-                    string msg = TAG + "CustomRename : Encoding result file is not exist. name=" + enc_path;
-                    Loger.Write(msg);
-                    Loger.Write("");
                 }
             }
+            else
+            {
+                Loger.Write(TAG + "CustomRename : Encoding result file is not exist. name=" + enc_path);
+            }
+        }
+
+        public enum EncoderResult
+        {
+            success,
+            fail,
+            already_encoding,
+            size_over
         }
     }
 }

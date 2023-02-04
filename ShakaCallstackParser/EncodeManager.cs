@@ -201,16 +201,24 @@ namespace ShakaCallstackParser
         private Result Encode(int index, string path, string out_directory, int thread_num, int crf)
         {
             callbacks_.encode_started(index, crf);
-            int result_code = encoder_.Encode(index, path, out_directory, thread_num, crf);
+            Encoder.EncoderResult result = encoder_.Encode(index, path, out_directory, thread_num, crf, out int return_code, out double ssim);
             if (is_canceled_)
             {
                 callbacks_.encode_canceled(index);
                 return Result.fail_stop;
             }
-            if (result_code != 0)
+            
+            switch (result)
             {
-                callbacks_.encode_failed(index, result_code, "Unexpected error occured.");
-                return Result.fail_continue;
+                case Encoder.EncoderResult.already_encoding:
+                    callbacks_.encode_failed(index, return_code, "Error: Already encoding started.");
+                    return Result.fail_stop;
+                case Encoder.EncoderResult.size_over:
+                    callbacks_.encode_failed(index, return_code, "Encoding succeeded, but the file size did not decrease.");
+                    return Result.fail_continue;
+                case Encoder.EncoderResult.fail:
+                    callbacks_.encode_failed(index, return_code, "Unexpected error occured.");
+                    return Result.fail_continue;
             }
             callbacks_.encode_finished(index);
 

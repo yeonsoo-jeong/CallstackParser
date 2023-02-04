@@ -46,12 +46,14 @@ namespace ShakaCallstackParser
             Tuple<long, int> video_info = FFmpegUtil.GetSizeDurationSec(path);
             if (is_canceled_)
             {
+                is_analyzing_ = false;
                 return AnalyzerResult.fail;
             }
             long inp_size = video_info.Item1;
             int inp_seconds = video_info.Item2;
             if (inp_size < 0 || inp_seconds < 0)
             {
+                is_analyzing_ = false;
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] size or seconds is negative. size=" + inp_size + ", seconds=" + inp_seconds);
                 return AnalyzerResult.fail;
             }
@@ -75,9 +77,11 @@ namespace ShakaCallstackParser
             Tuple<int, int, long> result = AnalyzeJobs(analyze_jobs_);
             if (is_canceled_)
             {
+                is_analyzing_ = false;
                 return AnalyzerResult.fail;
             }
-            
+
+            is_analyzing_ = false;
             crf = result.Item1;
             int result_seconds = result.Item2;
             long result_size = result.Item3;
@@ -98,14 +102,12 @@ namespace ShakaCallstackParser
 
         public void OnEncodeCanceled()
         {
-            is_analyzing_ = false;
             is_canceled_ = true;
             ssim_calculator_.OnEncodeCanceled();
         }
 
         public void OnWindowClosed()
         {
-            is_analyzing_ = false;
             is_canceled_ = true;
             ssim_calculator_.OnWindowClosed();
         }
@@ -152,7 +154,6 @@ namespace ShakaCallstackParser
         private void AnalyzeFinished()
         {
             analyze_jobs_.Clear();
-            is_analyzing_ = false;
         }
 
         private bool IsValidSSIM(double ssim)
