@@ -8,61 +8,76 @@
         Title="EncWindow" Height="450" Width="836"
         Activated="Window_Activated" Closed="Window_Closed">
     <Grid>
-        <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="775" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
-            <ListView.Resources>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                </Style>
-            </ListView.Resources>
-            <ListView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Delete" Click="MenuItem_Click"/>
-                </ContextMenu>
-            </ListView.ContextMenu>
-            <ListView.View>
-                <GridView>
-                    <GridView.Columns>
-                        <GridViewColumn Header="Num" Width="50">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock TextAlignment="Center" Text="{Binding number}" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
-                        <GridViewColumn Header="Progress" Width="120" >
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"  Foreground="{Binding Path=progress_color}"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="usage" Width="80">
-                            <GridViewColumn.CellTemplate>
-                                <!--<DataTemplate DataType="wpf:SpeedComboBoxEntry">-->
-                                <DataTemplate>
-                                    <ComboBox x:Name="ComboUsage" ItemsSource="{Binding cpu_usage}" SelectedItem="{Binding cpu_usage_selected}" Width="60"/>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="Note" Width="120">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock TextAlignment="Center" Text="{Binding note}" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView.Columns>
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <Button x:Name="BtnEncodeCancel" Content="Encode" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
-        <Button x:Name="BtnRemoveDone" Content="Rm" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
-        <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="" VerticalAlignment="Top" Width="458" IsReadOnly="True" />
-        <Button x:Name="BtnChangeDestPath" Content="..." HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" Click="BtnChangeDestPath_Click"/>
-        <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
-        <Button x:Name="BtnOpenSavedFolder" Content="Open" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" Click="BtnOpenSavedFolder_Click"/>
+        <Grid.ColumnDefinitions>
+            <!--<ColumnDefinition Width="*" />-->
+            <ColumnDefinition Width="1" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
+        <GridSplitter Grid.Column="1"
+            Background="Black" 
+            ShowsPreview="True"
+            Width="1" 
+            HorizontalAlignment="Center"
+            VerticalAlignment="Stretch" />
+
+        <Grid Grid.Column="2">
+            <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="775" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
+                <ListView.Resources>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.Resources>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Delete" Click="MenuItem_Click"/>
+                    </ContextMenu>
+                </ListView.ContextMenu>
+                <ListView.View>
+                    <GridView>
+                        <GridView.Columns>
+                            <GridViewColumn Header="Num" Width="50">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock TextAlignment="Center" Text="{Binding number}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
+                            <GridViewColumn Header="Progress" Width="120" >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Path=progress}" HorizontalAlignment="Center"  Foreground="{Binding Path=progress_color}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="usage" Width="80">
+                                <GridViewColumn.CellTemplate>
+                                    <!--<DataTemplate DataType="wpf:SpeedComboBoxEntry">-->
+                                    <DataTemplate>
+                                        <ComboBox x:Name="ComboUsage" ItemsSource="{Binding cpu_usage}" SelectedItem="{Binding cpu_usage_selected}" Width="60"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Note" Width="120">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock TextAlignment="Center" Text="{Binding note}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView.Columns>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <Button x:Name="BtnEncodeCancel" Content="Encode" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
+            <Button x:Name="BtnRemoveDone" Content="Rm" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
+            <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="" VerticalAlignment="Top" Width="458" IsReadOnly="True" />
+            <Button x:Name="BtnChangeDestPath" Content="..." HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" Click="BtnChangeDestPath_Click"/>
+            <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>
+            <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
+            <Button x:Name="BtnOpenSavedFolder" Content="Open" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" Click="BtnOpenSavedFolder_Click"/>
+        </Grid>
     </Grid>
 </Window>
