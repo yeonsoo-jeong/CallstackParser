@@ -4,12 +4,13 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using YsCommon;
 
 namespace ShakaCallstackParser.Model
 {
     class EncodeModel : INotifyPropertyChanged
     {
-        private string dest_path_ = "";
+        private string dest_path_ = ConfigManager.GetDestPath();
         public string DestPath
         {
             get

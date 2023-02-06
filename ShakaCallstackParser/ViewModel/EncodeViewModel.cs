@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,11 +14,13 @@ namespace ShakaCallstackParser.ViewModel
     {
         private Model.EncodeModel model = null;
         public Command cmd_browse_dest_path { get; set; }
-
+        public Command cmd_open_saved_folder { get; set; }
+        
         public EncodeViewModel()
         {
             model = new Model.EncodeModel();
             cmd_browse_dest_path = new Command(Execute_BrowseDestPath, CanExecute_BrowseDestPath);
+            cmd_open_saved_folder = new Command(Execute_OpenSavedFolder, CanExecute_OpenSavedFolder);
         }
 
         public Model.EncodeModel Model
@@ -46,8 +49,17 @@ namespace ShakaCallstackParser.ViewModel
             return true;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private void Execute_OpenSavedFolder(object obj)
+        {
+            Process.Start(model.DestPath);
+        }
 
+        private bool CanExecute_OpenSavedFolder(object obj)
+        {
+            return true;
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {
             PropertyChangedEventHandler handler = PropertyChanged;

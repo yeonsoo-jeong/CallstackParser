@@ -56,8 +56,6 @@ namespace ShakaCallstackParser
             enc_item_manager_ = new EncItemManager();
             enc_manager_ = new EncodeManager(callback, enc_item_manager_);
 
-            TextBoxDestPath.Text = ConfigManager.GetDestPath();
-
             for (int i = 0; i < kCpuUsageItems.Length; i++)
             {
                 ComboUsageAll.Items.Add(kCpuUsageItems[i]);
@@ -346,11 +344,6 @@ namespace ShakaCallstackParser
         {
             enc_item_manager_.OnCpuUsageChanged((sender as ComboBox).SelectedItem.ToString());
             ListView1.Items.Refresh();
-        }
-
-        private void BtnOpenSavedFolder_Click(object sender, RoutedEventArgs e)
-        {
-            Process.Start(TextBoxDestPath.Text);
         }
     }
 }

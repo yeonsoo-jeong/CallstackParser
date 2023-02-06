@@ -79,7 +79,7 @@
             <Button x:Name="BtnChangeDestPath" Content="..." Command="{Binding cmd_browse_dest_path}" HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" />
             <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
-            <Button x:Name="BtnOpenSavedFolder" Content="Open" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" Click="BtnOpenSavedFolder_Click"/>
+            <Button x:Name="BtnOpenSavedFolder" Content="Open" Command="{Binding cmd_open_saved_folder}" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" />
         </Grid>
     </Grid>
 </Window>
