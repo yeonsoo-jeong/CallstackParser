@@ -60,6 +60,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Analyzer\AnalyzeTimeSelector.cs" />
+    <Compile Include="Command.cs" />
     <Compile Include="Common\ConfigManager.cs" />
     <Compile Include="EncItemManager.cs" />
     <Compile Include="Common\EncodingFileManager.cs" />
@@ -68,10 +69,12 @@
     <Compile Include="Common\Loger.cs" />
     <Compile Include="Common\MediaInfoUtil.cs" />
     <Compile Include="Analyzer\SSIMCalculator.cs" />
+    <Compile Include="Model\EncodeModel.cs" />
     <Compile Include="VDVParser.cs" />
     <Compile Include="VideoDataViewWindow.xaml.cs">
       <DependentUpon>VideoDataViewWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\EncodeViewModel.cs" />
     <Page Include="EncWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

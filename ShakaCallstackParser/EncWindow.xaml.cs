@@ -342,17 +342,6 @@ namespace ShakaCallstackParser
             ListView1.Items.Refresh();
         }
 
-        private void BtnChangeDestPath_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new FolderPicker();
-            //dlg.InputPath = @"c:\windows\system32";
-            if (dlg.ShowDialog() == true)
-            {
-                TextBoxDestPath.Text = dlg.ResultPath;
-                ConfigManager.SetDestPath(dlg.ResultPath);
-            }
-        }
-
         private void ComboUsageAll_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             enc_item_manager_.OnCpuUsageChanged((sender as ComboBox).SelectedItem.ToString());
