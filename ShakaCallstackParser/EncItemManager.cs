@@ -1,21 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+
+
+using static ShakaCallstackParser.Model.EncodeModel;
+
+
 
 namespace ShakaCallstackParser
 {
     class EncItemManager
     {
-        List<EncListItems> enc_items_ = new List<EncListItems>();
+        //ObservableCollection<EncodeItem> enc_items_ = new ObservableCollection<EncodeItem>();
+        ObservableCollection<EncodeItem> enc_items_;
 
-        public EncItemManager()
+        public EncItemManager(ObservableCollection<EncodeItem> items)
         {
-
+            enc_items_ = items;
         }
 
-        public List<EncListItems> GetEncItems()
+        public ObservableCollection<EncodeItem> GetEncItems()
         {
             return enc_items_;
         }
@@ -25,7 +33,7 @@ namespace ShakaCallstackParser
             string num_str = number.ToString();
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].number == num_str)
+                if (enc_items_[i].Number == num_str)
                 {
                     return i;
                 }
@@ -34,9 +42,9 @@ namespace ShakaCallstackParser
             return -1;
         }
 
-        public void RemoveItems(List<EncListItems> items)
+        public void RemoveItems(List<EncodeItem> items)
         {
-            foreach (EncListItems item in items)
+            foreach (EncodeItem item in items)
             {
                 enc_items_.Remove(item);
             }
@@ -47,7 +55,7 @@ namespace ShakaCallstackParser
         {
             for (int i = enc_items_.Count - 1; i >= 0; i--)
             {
-                if (enc_items_[i].status == EncListItems.Status.success)
+                if (enc_items_[i].EncodeStatus == EncodeItem.Status.success)
                 {
                     enc_items_.RemoveAt(i);
                 }
@@ -60,7 +68,7 @@ namespace ShakaCallstackParser
             int ret = 0;
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
+                if (EncodeItem.IsStatusShouldEncode(enc_items_[i].EncodeStatus) )
                 {
                     ret++;
                 }
@@ -69,11 +77,11 @@ namespace ShakaCallstackParser
             return ret;
         }
 
-        public EncListItems GetToEncodeFirstItem()
+        public EncodeItem GetToEncodeFirstItem()
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (EncListItems.IsStatusShouldEncode(enc_items_[i].status))
+                if (EncodeItem.IsStatusShouldEncode(enc_items_[i].EncodeStatus))
                 {
                     return enc_items_[i];
                 }
@@ -86,12 +94,12 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
+                if (EncodeItem.IsStatusShouldEncode(enc_items_[i].EncodeStatus) )
                 {
                     // for cancel & restart scenario
-                    enc_items_[i].note = "";
-                    enc_items_[i].progress = 0;
-                    enc_items_[i].status = EncListItems.Status.none;
+                    enc_items_[i].Note = "";
+                    enc_items_[i].Progress = 0;
+                    enc_items_[i].EncodeStatus = EncodeItem.Status.none;
                 }
             }
         }
@@ -102,15 +110,18 @@ namespace ShakaCallstackParser
             {
                 foreach (string file in files)
                 {
-                    EncListItems item = new EncListItems();
-                    item.path = file;
-                    item.cpu_usage = new List<string>(EncWindow.kCpuUsageItems);
-                    item.cpu_usage_selected = cpu_usage;
-                    item.progress_color = "LimeGreen";
+                    EncodeItem item = new EncodeItem();
+                    item.Path = file;
+                    item.CpuUsage = new List<string>(EncWindow.kCpuUsageItems);
+                    item.CpuUsageSelected = cpu_usage;
+                    item.ProgressColor = "LimeGreen";
                     enc_items_.Add(item);
                 }
 
-                enc_items_ = enc_items_.Distinct(new EncListComparer()).ToList();
+                List<EncodeItem> temp = enc_items_.Distinct(new EncListComparer()).ToList();
+                enc_items_.Clear();
+                temp.ForEach(x => enc_items_.Add(x));
+                //enc_items_ = ;
                 ReorderEncListNumber();
             }
         }
@@ -119,9 +130,9 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if ( EncListItems.IsStatusShouldEncode(enc_items_[i].status) )
+                if (EncodeItem.IsStatusShouldEncode(enc_items_[i].EncodeStatus) )
                 {
-                    enc_items_[i].cpu_usage_selected = changed_item;
+                    enc_items_[i].CpuUsageSelected = changed_item;
                 }
             }
         }
@@ -130,76 +141,27 @@ namespace ShakaCallstackParser
         {
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                enc_items_[i].number = i.ToString();
+                enc_items_[i].Number = i.ToString();
             }
         }
     }
 
-    public class EncListItems
+    public class EncListComparer : IEqualityComparer<EncodeItem>
     {
-        public enum Status
+        //public bool Equals(EncodeItem x, EncodeItem y)
+        bool IEqualityComparer<EncodeItem>.Equals(EncodeItem x, EncodeItem y)
         {
-            none,
-            analyzing,
-            encoding,
-            success,
-            cancel,
-            fail
+            return x.Path == y.Path;
         }
 
-        public EncListItems()
-        {
-            progress = 0;
-            status = Status.none;
-            note = "";
-        }
-
-        public static bool IsStatusShouldEncode(Status status)
-        {
-            if (status == Status.none || status == Status.cancel)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public static bool IsStatusProcessing(Status status)
-        {
-            if (status == Status.analyzing || status == Status.encoding)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public string number { get; set; }
-        public string path { get; set; }
-        public int progress { get; set; }
-        public string progress_color { get; set; }
-
-        public List<string> cpu_usage { get; set; }
-
-        public string cpu_usage_selected { get; set; }
-
-        public string note { get; set; }
-        public Status status { get; set; }
-    }
-
-    public class EncListComparer : IEqualityComparer<EncListItems>
-    {
-        public bool Equals(EncListItems x, EncListItems y)
-        {
-            return x.path == y.path;
-        }
-
-        public int GetHashCode(EncListItems obj)
+        int IEqualityComparer<EncodeItem>.GetHashCode(EncodeItem obj)
         {
             if (obj == null)
             {
                 return 0;
             }
 
-            return obj.path == null ? 0 : obj.path.GetHashCode();
+            return obj.Path == null ? 0 : obj.Path.GetHashCode();
         }
     }
 }

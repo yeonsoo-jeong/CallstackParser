@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using YsCommon;
+using static ShakaCallstackParser.Model.EncodeModel;
 
 namespace ShakaCallstackParser
 {
@@ -94,11 +95,11 @@ namespace ShakaCallstackParser
 
             while (enc_item_manager_.GetToEncodeItemsNum() > 0)
             {
-                EncListItems enc_list_item = enc_item_manager_.GetToEncodeFirstItem();
-                int number = Convert.ToInt32(enc_list_item.number);
+                EncodeItem enc_list_item = enc_item_manager_.GetToEncodeFirstItem();
+                int number = Convert.ToInt32(enc_list_item.Number);
                 int index = enc_item_manager_.GetIndexByNumber(number);
-                string path = enc_list_item.path;
-                int thread_num = GetCoreNumFromCpuUsage(enc_list_item.cpu_usage_selected);
+                string path = enc_list_item.Path;
+                int thread_num = GetCoreNumFromCpuUsage(enc_list_item.CpuUsageSelected);
                 Result result;
 
                 Stopwatch stopwatch = new Stopwatch();

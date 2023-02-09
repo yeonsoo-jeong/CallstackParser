@@ -7,7 +7,7 @@
         xmlns:ViewModel="clr-namespace:ShakaCallstackParser.ViewModel" x:Class="ShakaCallstackParser.EncWindow"
         mc:Ignorable="d"
         Title="EncWindow" Height="450" Width="836"
-        Activated="Window_Activated" Closed="Window_Closed">
+        Closed="Window_Closed">
     <Grid>
         <Grid.ColumnDefinitions>
             <!--<ColumnDefinition Width="*" />-->
@@ -24,10 +24,10 @@
             VerticalAlignment="Stretch" />
 
         <Grid Grid.Column="2">
-            <Grid.DataContext>
+            <!--<Grid.DataContext>
                 <ViewModel:EncodeViewModel/>
-            </Grid.DataContext>
-            <ListView x:Name="ListView1" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="775" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
+            </Grid.DataContext>-->
+            <ListView x:Name="ListView1" ItemsSource="{Binding EncodeItemList}" SelectionChanged="ListView_SelectionChanged" HorizontalAlignment="Left" Height="292" Margin="32,92,0,0" VerticalAlignment="Top" Width="775" AllowDrop="True" DragDrop.Drop="ListView1_OnDroped">
                 <ListView.Resources>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -43,15 +43,15 @@
                         <GridViewColumn Header="Num" Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock TextAlignment="Center" Text="{Binding number}" />
+                                    <TextBlock TextAlignment="Center" Text="{Binding Number}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Path" DisplayMemberBinding="{Binding path}" Width="400" />
+                        <GridViewColumn Header="Path" DisplayMemberBinding="{Binding Path}" Width="400" />
                         <GridViewColumn Header="Progress" Width="120" >
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding progress}" HorizontalAlignment="Center"  Foreground="{Binding progress_color}"/>
+                                    <ProgressBar Maximum="100" Height="10" Width="100" Value="{Binding Progress}" HorizontalAlignment="Center"  Foreground="{Binding ProgressColor}"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -59,26 +59,26 @@
                             <GridViewColumn.CellTemplate>
                                 <!--<DataTemplate DataType="wpf:SpeedComboBoxEntry">-->
                                 <DataTemplate>
-                                    <ComboBox x:Name="ComboUsage" ItemsSource="{Binding cpu_usage}" SelectedItem="{Binding cpu_usage_selected}" Width="60"/>
+                                    <ComboBox x:Name="ComboUsage" ItemsSource="{Binding CpuUsage}" SelectedItem="{Binding CpuUsageSelected}" Width="60"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn Header="Note" Width="120">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock TextAlignment="Center" Text="{Binding note}" />
+                                    <TextBlock TextAlignment="Center" Text="{Binding Note}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Button x:Name="BtnEncodeCancel" Content="Encode" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
-            <Button x:Name="BtnRemoveDone" Content="Rm" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
-            <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="{Binding Model.DestPath,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="458" IsReadOnly="True" />
-            <Button x:Name="BtnChangeDestPath" Content="..." Command="{Binding cmd_browse_dest_path}" HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" />
+            <Button x:Name="BtnEncodeCancel" Content="{Binding EncModel.BtnEncCancelString}" IsEnabled="{Binding EncModel.BtnEncCancelEnabled}" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
+            <Button x:Name="BtnRemoveDone" Content="Rm" IsEnabled="{Binding EncModel.BtnRemoveDoneEnabled}" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
+            <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="{Binding EncModel.DestPath,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="458" IsReadOnly="True" />
+            <Button x:Name="BtnChangeDestPath" Content="..." IsEnabled="{Binding EncModel.BtnChangeDestPathEnabled}" Command="{Binding cmd_browse_dest_path}" HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" />
             <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>
-            <ComboBox x:Name="ComboUsageAll" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
+            <ComboBox x:Name="ComboUsageAll" ItemsSource="{Binding CpuUsageItems}" SelectedItem="{Binding EncModel.CpuUsageItemSelected}" HorizontalAlignment="Left" Margin="619,54,0,0" VerticalAlignment="Top" Width="51" SelectionChanged="ComboUsageAll_SelectionChanged"/>
             <Button x:Name="BtnOpenSavedFolder" Content="Open" Command="{Binding cmd_open_saved_folder}" HorizontalAlignment="Left" Margin="704,54,0,0" VerticalAlignment="Top" Width="75" />
         </Grid>
     </Grid>
