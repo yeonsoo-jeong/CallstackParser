@@ -73,8 +73,8 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Button x:Name="BtnEncodeCancel" Content="{Binding EncModel.BtnEncCancelString}" IsEnabled="{Binding EncModel.BtnEncCancelEnabled}" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" Click="BtnEncodeCancel_Click"/>
-            <Button x:Name="BtnRemoveDone" Content="Rm" IsEnabled="{Binding EncModel.BtnRemoveDoneEnabled}" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475" Click="BtnRemoveDone_Click"/>
+            <Button x:Name="BtnEncodeCancel" Content="{Binding EncModel.BtnEncCancelString}" IsEnabled="{Binding EncModel.BtnEncCancelEnabled}" Command="{Binding cmd_encode_cancel}" HorizontalAlignment="Left" Margin="725,10,0,0" VerticalAlignment="Top" Width="75" />
+            <Button x:Name="BtnRemoveDone" Content="Rm" IsEnabled="{Binding EncModel.BtnRemoveDoneEnabled}" Command="{Binding cmd_remove_done}" HorizontalAlignment="Left" Margin="660,10,0,0" VerticalAlignment="Top" Width="44" RenderTransformOrigin="1.221,0.475"/>
             <TextBox x:Name="TextBoxDestPath" HorizontalAlignment="Left" Height="23" Margin="70,54,0,0" Text="{Binding EncModel.DestPath,UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="458" IsReadOnly="True" />
             <Button x:Name="BtnChangeDestPath" Content="..." IsEnabled="{Binding EncModel.BtnChangeDestPathEnabled}" Command="{Binding cmd_browse_dest_path}" HorizontalAlignment="Left" Margin="533,54,0,0" VerticalAlignment="Top" Width="18" />
             <Label Content="dest" HorizontalAlignment="Left" Margin="32,51,0,0" VerticalAlignment="Top"/>

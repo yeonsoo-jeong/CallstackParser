@@ -48,11 +48,6 @@ namespace ShakaCallstackParser
             view_model_.ListView_OnDroped(sender, e);
         }
 
-        private void BtnEncodeCancel_Click(object sender, RoutedEventArgs e)
-        {
-            view_model_.BtnEncodeCancel_Click();
-        }
-
         private void Window_Closed(object sender, EventArgs e)
         {
             view_model_.Window_Closed();
@@ -63,14 +58,9 @@ namespace ShakaCallstackParser
             view_model_.MenuItem_Click();
         }
 
-        private void BtnRemoveDone_Click(object sender, RoutedEventArgs e)
-        {
-            view_model_.BtnRemoveDone_Click();
-        }
-
         private void ComboUsageAll_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            view_model_.ComboUsageAll_SelectionChanged((sender as ComboBox).SelectedItem.ToString());
+            view_model_.ComboUsageAll_SelectionChanged();
         }
 
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)

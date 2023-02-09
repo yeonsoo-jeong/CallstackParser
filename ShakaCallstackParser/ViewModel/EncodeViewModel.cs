@@ -20,6 +20,8 @@ namespace ShakaCallstackParser.ViewModel
         private Model.EncodeModel encode_model = null;
         public Command cmd_browse_dest_path { get; set; }
         public Command cmd_open_saved_folder { get; set; }
+        public Command cmd_encode_cancel { get; set; }
+        public Command cmd_remove_done { get; set; }
 
         public ObservableCollection<Model.EncodeModel.EncodeItem> EncodeItemList { get; set; }
         public List<Model.EncodeModel.EncodeItem> SelectedListviewItems { get; set; }
@@ -35,6 +37,8 @@ namespace ShakaCallstackParser.ViewModel
             encode_model = new Model.EncodeModel();
             cmd_browse_dest_path = new Command(Execute_BrowseDestPath, CanExecute_BrowseDestPath);
             cmd_open_saved_folder = new Command(Execute_OpenSavedFolder, CanExecute_OpenSavedFolder);
+            cmd_encode_cancel = new Command(Execute_EncodeCancel, CanExecute_EncodeCancel);
+            cmd_remove_done = new Command(Execute_RemoveDone, CanExecute_RemoveDone);
 
             EncodeItemList = new ObservableCollection<Model.EncodeModel.EncodeItem>()
             {
@@ -85,6 +89,45 @@ namespace ShakaCallstackParser.ViewModel
             return true;
         }
 
+        private void Execute_EncodeCancel(object obj)
+        {
+            if (EncModel.BtnEncCancelString == Model.EncodeModel.kBtnLabelEncode)
+            {
+                if (enc_item_manager_.GetToEncodeItemsNum() > 0)
+                {
+                    Start();
+                }
+                else
+                {
+                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
+                }
+            }
+            else if (EncModel.BtnEncCancelString == Model.EncodeModel.kBtnLabelCancel)
+            {
+                Cancel();
+            }
+            else
+            {
+                // Unexpected Scenario
+                Loger.Write("EncWindow.xaml.cs : BtnEncodeCancel_Click : Unexpected Scenario");
+            }
+        }
+
+        private bool CanExecute_EncodeCancel(object obj)
+        {
+            return true;
+        }
+
+        private void Execute_RemoveDone(object obj)
+        {
+            enc_item_manager_.RemoveFinishedItems();
+        }
+
+        private bool CanExecute_RemoveDone(object obj)
+        {
+            return true;
+        }
+
         public void Init()
         {
             EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStarted,
@@ -106,30 +149,6 @@ namespace ShakaCallstackParser.ViewModel
                 {
                     enc_item_manager_.DistinctAddFiles(files, EncModel.CpuUsageItemSelected);
                 }
-            }
-        }
-
-        public void BtnEncodeCancel_Click()
-        {
-            if (EncModel.BtnEncCancelString == Model.EncodeModel.kBtnLabelEncode)
-            {
-                if (enc_item_manager_.GetToEncodeItemsNum() > 0)
-                {
-                    Start();
-                }
-                else
-                {
-                    MessageBox.Show("인코딩할 항목이 존재하지 않습니다.");
-                }
-            }
-            else if (EncModel.BtnEncCancelString == Model.EncodeModel.kBtnLabelCancel)
-            {
-                Cancel();
-            }
-            else
-            {
-                // Unexpected Scenario
-                Loger.Write("EncWindow.xaml.cs : BtnEncodeCancel_Click : Unexpected Scenario");
             }
         }
 
@@ -305,14 +324,9 @@ namespace ShakaCallstackParser.ViewModel
             }
         }
 
-        public void BtnRemoveDone_Click()
+        public void ComboUsageAll_SelectionChanged()
         {
-            enc_item_manager_.RemoveFinishedItems();
-        }
-
-        public void ComboUsageAll_SelectionChanged(string item)
-        {
-            enc_item_manager_.OnCpuUsageChanged(item);
+            enc_item_manager_.OnCpuUsageChanged(EncModel.CpuUsageItemSelected);
         }
 
 
