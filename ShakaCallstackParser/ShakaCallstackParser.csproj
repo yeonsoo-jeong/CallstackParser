@@ -69,6 +69,7 @@
     <Compile Include="Common\Loger.cs" />
     <Compile Include="Common\MediaInfoUtil.cs" />
     <Compile Include="Analyzer\SSIMCalculator.cs" />
+    <Compile Include="Model\EncodeItem.cs" />
     <Compile Include="Model\EncodeModel.cs" />
     <Compile Include="VDVParser.cs" />
     <Compile Include="VideoDataViewWindow.xaml.cs">

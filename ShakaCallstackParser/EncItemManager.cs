@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShakaCallstackParser.Model;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -6,16 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-
-using static ShakaCallstackParser.Model.EncodeModel;
-
-
-
 namespace ShakaCallstackParser
 {
     class EncItemManager
     {
-        //ObservableCollection<EncodeItem> enc_items_ = new ObservableCollection<EncodeItem>();
         ObservableCollection<EncodeItem> enc_items_;
 
         public EncItemManager(ObservableCollection<EncodeItem> items)

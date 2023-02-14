@@ -9,10 +9,10 @@ using System.Windows;
 using System.Windows.Controls;
 
 using System.IO;
+using System.Collections.ObjectModel;
 
 using YsCommon;
-using static ShakaCallstackParser.Model.EncodeModel;
-using System.Collections.ObjectModel;
+using ShakaCallstackParser.Model;
 
 namespace ShakaCallstackParser
 {

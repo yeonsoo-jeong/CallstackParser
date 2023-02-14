@@ -15,6 +15,12 @@ namespace ShakaCallstackParser.ViewModel
 {
     class EncodeViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
         const string TAG = "EncodeViewModel.cs : ";
 
         private Model.EncodeModel encode_model = null;
@@ -23,8 +29,8 @@ namespace ShakaCallstackParser.ViewModel
         public Command cmd_encode_cancel { get; set; }
         public Command cmd_remove_done { get; set; }
 
-        public ObservableCollection<Model.EncodeModel.EncodeItem> EncodeItemList { get; set; }
-        public List<Model.EncodeModel.EncodeItem> SelectedListviewItems { get; set; }
+        public ObservableCollection<Model.EncodeItem> EncodeItemList { get; set; }
+        public List<Model.EncodeItem> SelectedListviewItems { get; set; }
 
         public ObservableCollection<string> CpuUsageItems { get; set; }
 
@@ -40,11 +46,11 @@ namespace ShakaCallstackParser.ViewModel
             cmd_encode_cancel = new Command(Execute_EncodeCancel, CanExecute_EncodeCancel);
             cmd_remove_done = new Command(Execute_RemoveDone, CanExecute_RemoveDone);
 
-            EncodeItemList = new ObservableCollection<Model.EncodeModel.EncodeItem>()
+            EncodeItemList = new ObservableCollection<Model.EncodeItem>()
             {
             };
 
-            SelectedListviewItems = new List<Model.EncodeModel.EncodeItem>(); // no need??
+            SelectedListviewItems = new List<Model.EncodeItem>(); // no need??
 
             CpuUsageItems = new ObservableCollection<string>(EncWindow.kCpuUsageItems.ToArray());
         }
@@ -192,14 +198,14 @@ namespace ShakaCallstackParser.ViewModel
         private void OnAnalyzeStarted(int index)
         {
             EncodeItemList[index].Note = "Analyzing";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.analyzing;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.analyzing;
             Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(EncodeItemList[index].Path));
         }
 
         private void OnAnalyzeCanceled(int index)
         {
             EncodeItemList[index].Note = "Canceled";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.cancel;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
             Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
         }
 
@@ -212,7 +218,7 @@ namespace ShakaCallstackParser.ViewModel
             }
             EncodeItemList[index].Progress = 100;
             EncodeItemList[index].ProgressColor = "Red";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.fail;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
             Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
         }
 
@@ -226,7 +232,7 @@ namespace ShakaCallstackParser.ViewModel
         private void OnEncodeStarted(int index, int crf)
         {
             EncodeItemList[index].Note = "Encoding";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.encoding;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.encoding;
             Loger.Write(TAG + "OnEncodeStarted : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + crf);
         }
 
@@ -243,7 +249,7 @@ namespace ShakaCallstackParser.ViewModel
             }
 
             EncodeItemList[index].Note = "Canceled";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.cancel;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
             Loger.Write(TAG + "OnEncodeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
         }
 
@@ -254,7 +260,7 @@ namespace ShakaCallstackParser.ViewModel
             {
                 EncodeItemList[index].Note = msg;
             }
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.fail;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
             EncodeItemList[index].Progress = 100;
             EncodeItemList[index].ProgressColor = "Red";
             Loger.Write(TAG + "OnEncodeFailed : " + Path.GetFileName(EncodeItemList[index].Path) + ", result_code=" + result_code);
@@ -263,7 +269,7 @@ namespace ShakaCallstackParser.ViewModel
         private void OnEncodeFinished(int index)
         {
             EncodeItemList[index].Note = "Success";
-            EncodeItemList[index].EncodeStatus = Model.EncodeModel.EncodeItem.Status.success;
+            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.success;
             EncodeItemList[index].Progress = 100;
             Loger.Write(TAG + "OnEncodeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
         }
@@ -286,10 +292,10 @@ namespace ShakaCallstackParser.ViewModel
         public void MenuItem_Click()
         {
             bool is_processing = false;
-            List<Model.EncodeModel.EncodeItem> items = new List<Model.EncodeModel.EncodeItem>();
-            foreach (Model.EncodeModel.EncodeItem item in SelectedListviewItems)
+            List<Model.EncodeItem> items = new List<Model.EncodeItem>();
+            foreach (Model.EncodeItem item in SelectedListviewItems)
             {
-                if (Model.EncodeModel.EncodeItem.IsStatusProcessing(item.EncodeStatus))
+                if (Model.EncodeItem.IsStatusProcessing(item.EncodeStatus))
                 {
                     is_processing = true;
                 }
@@ -323,17 +329,6 @@ namespace ShakaCallstackParser.ViewModel
         public void ComboUsageAll_SelectionChanged()
         {
             enc_item_manager_.OnCpuUsageChanged(EncModel.CpuUsageItemSelected);
-        }
-
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(name));
-            }
         }
     }
 }
