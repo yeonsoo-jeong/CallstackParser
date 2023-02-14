@@ -46,11 +46,7 @@ namespace ShakaCallstackParser.ViewModel
 
             SelectedListviewItems = new List<Model.EncodeModel.EncodeItem>(); // no need??
 
-            CpuUsageItems = new ObservableCollection<string>()
-            {
-                "Full",
-                "Half"
-            };
+            CpuUsageItems = new ObservableCollection<string>(EncWindow.kCpuUsageItems.ToArray());
         }
 
         public Model.EncodeModel EncModel

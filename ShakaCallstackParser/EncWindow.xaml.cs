@@ -28,7 +28,7 @@ namespace ShakaCallstackParser
             "Full",
             "Half"
         };
-
+        
         public EncWindow()
         {
             InitializeComponent();

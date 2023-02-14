@@ -28,7 +28,7 @@ namespace ShakaCallstackParser.Model
             }
         }
 
-        private string cpu_usage_item_selected_ = "Full";
+        private string cpu_usage_item_selected_ = EncWindow.kCpuUsageItems[0];
         public string CpuUsageItemSelected
         {
             get
