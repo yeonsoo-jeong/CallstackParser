@@ -18,6 +18,7 @@ namespace ShakaCallstackParser
         private const double kTargetSSIMValue = 0.9870;
         private const double kTargetSSIMRangeMin = 0.9865;
         private const double kTargetSSIMRangeMax = 0.9875;
+        private const double kTargetSSIMGapLimit = 0.0030;
 
         SSIMCalculator ssim_calculator_;
 
@@ -69,10 +70,12 @@ namespace ShakaCallstackParser
             }
 
             // Must be descending order!
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 29, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 28, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 27, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 26, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
+            analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 24, time_pair));
 
             Tuple<int, int, long> result = AnalyzeJobs(analyze_jobs_);
             if (is_canceled_)
@@ -125,7 +128,7 @@ namespace ShakaCallstackParser
                 double avg_ssim = tuple.Item1;
                 result_seconds = tuple.Item2;
                 result_size = tuple.Item3;
-                Loger.Write(TAG + "AnalyzeJobs : size_sum = " + result_size + ", size_second = " + result_seconds);
+                Loger.Write(TAG + "AnalyzeJobs : size_sum = " + result_size + ", size_second = " + result_seconds + ", avg_ssim = " + avg_ssim);
 
                 if (is_canceled_ || avg_ssim < 0)
                 {
@@ -146,6 +149,22 @@ namespace ShakaCallstackParser
                     AnalyzeFinished();
                     break;
                 }
+
+                if (current_index + 3 < jobs.Count() && IsSSIMGapTripleOver(avg_ssim))
+                {
+                    current_index += 3;
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is triple over. skip next 3 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                } 
+                else if (current_index + 2 < jobs.Count() && IsSSIMGapDoubleOver(avg_ssim))
+                {
+                    current_index += 2;
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is doubled over. skip next 2 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                }
+                else if (current_index + 1 < jobs.Count() && IsSSIMGapOver(avg_ssim))
+                {
+                    current_index++;
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                }
             }
             
             return new Tuple<int, int, long>(result_crf, result_seconds, result_size);
@@ -160,6 +179,21 @@ namespace ShakaCallstackParser
         {
             //return ssim >= kTargetSSIMRangeMin && ssim <= kTargetSSIMRangeMax;
             return ssim >= kTargetSSIMRangeMin;
+        }
+
+        private bool IsSSIMGapOver(double ssim)
+        {
+            return kTargetSSIMGapLimit <= (kTargetSSIMRangeMin - ssim);
+        }
+
+        private bool IsSSIMGapDoubleOver(double ssim)
+        {
+            return kTargetSSIMGapLimit <= ((kTargetSSIMRangeMin - ssim) * 2);
+        }
+
+        private bool IsSSIMGapTripleOver(double ssim)
+        {
+            return kTargetSSIMGapLimit <= ((kTargetSSIMRangeMin - ssim) * 3);
         }
 
         private long GetExpectedSize(int inp_duration_sec, long inp_size, int result_sec, long result_size)

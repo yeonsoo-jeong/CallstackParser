@@ -194,6 +194,38 @@ namespace ShakaCallstackParser.ViewModel
             });
         }
 
+        #region Test Callback
+        public enum EncodeCallbackStatus
+        {
+            AnalyzeStarted,
+            AnalyzeCancled,
+            AnalyzeFailed
+        }
+
+        private void OnEncodeStatusChanged(int index, EncodeCallbackStatus status)
+        {
+            switch (status)
+            {
+                case EncodeCallbackStatus.AnalyzeStarted:
+                    EncodeItemList[index].Note = "Analyzing";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.analyzing;
+                    Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(EncodeItemList[index].Path));
+                    break;
+                case EncodeCallbackStatus.AnalyzeCancled:
+                    EncodeItemList[index].Note = "Canceled";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
+                    Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
+                    break;
+                case EncodeCallbackStatus.AnalyzeFailed:
+                    break;
+
+
+                default:
+                    break;
+            }
+        }
+        #endregion
+
         #region Analyzer Callback
         private void OnAnalyzeStarted(int index)
         {
