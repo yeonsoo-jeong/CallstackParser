@@ -188,12 +188,12 @@ namespace ShakaCallstackParser
 
         private bool IsSSIMGapDoubleOver(double ssim)
         {
-            return kTargetSSIMGapLimit <= ((kTargetSSIMRangeMin - ssim) * 2);
+            return kTargetSSIMGapLimit * 2 <= (kTargetSSIMRangeMin - ssim);
         }
 
         private bool IsSSIMGapTripleOver(double ssim)
         {
-            return kTargetSSIMGapLimit <= ((kTargetSSIMRangeMin - ssim) * 3);
+            return kTargetSSIMGapLimit * 3 <= (kTargetSSIMRangeMin - ssim);
         }
 
         private long GetExpectedSize(int inp_duration_sec, long inp_size, int result_sec, long result_size)
