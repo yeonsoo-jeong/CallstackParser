@@ -30,16 +30,19 @@ namespace ShakaCallstackParser
         public class Callbacks
         {
             public delegate void OnEncodeStatusChanged(int index, EncodeCallbackStatus status, string msg);
-            public delegate void OnProgressChanged(int index, int percentage);
+            public delegate void OnAnalyzeProgressChanged(int index, int percentage);
+            public delegate void OnEncodeProgressChanged(int index, int percentage);
 
-            public Callbacks(OnEncodeStatusChanged esc, OnProgressChanged pc)
+            public Callbacks(OnEncodeStatusChanged esc, OnAnalyzeProgressChanged apc, OnEncodeProgressChanged epc)
             {
                 encode_status_changed = esc;
-                progress_changed = pc;
+                analyze_progress_changed = apc;
+                encode_progress_changed = epc;
             }
 
             public OnEncodeStatusChanged encode_status_changed;
-            public OnProgressChanged progress_changed;
+            public OnAnalyzeProgressChanged analyze_progress_changed;
+            public OnEncodeProgressChanged encode_progress_changed;
         }
         private readonly Callbacks callbacks_;
 
@@ -55,7 +58,7 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
             enc_item_manager_ = enc_item_manager;
             encoder_ = new Encoder(new Encoder.Callbacks(EncodeProgressChanged));
-            analyzer_ = new Analyzer();
+            analyzer_ = new Analyzer(new Analyzer.Callbacks(AnalyzeProgressChanged));
         }
 
         public static int GetCoreNumFromCpuUsage(string cpu_usage)
@@ -145,20 +148,29 @@ namespace ShakaCallstackParser
             analyzer_.OnWindowClosed();
         }
 
+        private void AnalyzeProgressChanged(int index, int percentage)
+        {
+            if (is_canceled_)
+            {
+                return;
+            }
+            callbacks_.analyze_progress_changed(index, percentage);
+        }
+
         private void EncodeProgressChanged(int index, int percentage)
         {
             if (is_canceled_)
             {
                 return;
             }
-            callbacks_.progress_changed(index, percentage);
+            callbacks_.encode_progress_changed(index, percentage);
         }
 
         private Result Analyze(int index, string path, int thread_num, out int crf)
         {
             callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeStarted, "");
 
-            Analyzer.AnalyzerResult result = analyzer_.Analyze(path, thread_num, out crf);
+            Analyzer.AnalyzerResult result = analyzer_.Analyze(index, path, thread_num, out crf);
             if (is_canceled_)
             {
                 callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeCancled, "");

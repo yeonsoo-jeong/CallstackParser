@@ -12,6 +12,18 @@ namespace ShakaCallstackParser
 {
     class Analyzer
     {
+        public class Callbacks
+        {
+            public delegate void OnProgressChanged(int index, int percentage);
+            public Callbacks(OnProgressChanged pc)
+            {
+                progress_changed = pc;
+            }
+
+            public OnProgressChanged progress_changed;
+        }
+        Callbacks callbacks_;
+
         const string TAG = "Analyzer.cs : ";
 
         private const int kDefaultCrfValue = 28;
@@ -26,14 +38,17 @@ namespace ShakaCallstackParser
 
         bool is_analyzing_ = false;
         bool is_canceled_ = false;
+        int parent_index = -1;
 
-        public Analyzer()
+        public Analyzer(Callbacks callback)
         {
+            callbacks_ = callback;
             ssim_calculator_ = new SSIMCalculator();
         }
 
-        public AnalyzerResult Analyze(string path, int thread_num, out int crf)
+        public AnalyzerResult Analyze(int index, string path, int thread_num, out int crf)
         {
+            parent_index = index;
             crf = -1;
 
             if (is_analyzing_)
@@ -121,7 +136,7 @@ namespace ShakaCallstackParser
             int result_seconds = -1;
             long result_size = -1;
             int current_index = 0;
-            while (analyze_jobs_.Count() > current_index)
+            while (jobs.Count() > current_index)
             {
                 AnalyzeJob job = jobs[current_index];
                 Tuple<double, int, long> tuple = ssim_calculator_.CalculateAverageSSIM(job.path, job.thread_num, job.crf, job.time_pair_list);
@@ -165,6 +180,9 @@ namespace ShakaCallstackParser
                     current_index++;
                     Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
                 }
+
+                int percentage = (int)((double)current_index / jobs.Count() * 100.0f);
+                callbacks_.progress_changed(parent_index, percentage);
             }
             
             return new Tuple<int, int, long>(result_crf, result_seconds, result_size);

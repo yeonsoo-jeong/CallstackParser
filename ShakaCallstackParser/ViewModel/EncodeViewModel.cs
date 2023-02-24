@@ -132,7 +132,7 @@ namespace ShakaCallstackParser.ViewModel
 
         public void Init()
         {
-            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStatusChanged, OnEncodeProgressChanged);
+            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStatusChanged, OnAnalyzeProgressChanged, OnEncodeProgressChanged);
 
             enc_item_manager_ = new EncItemManager(EncodeItemList);
             enc_manager_ = new EncodeManager(callback, enc_item_manager_);
@@ -197,6 +197,7 @@ namespace ShakaCallstackParser.ViewModel
             switch (status)
             {
                 case EncodeManager.EncodeCallbackStatus.AnalyzeStarted:
+                    EncodeItemList[index].ProgressColor = "Yellow";
                     EncodeItemList[index].Note = "Analyzing";
                     EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.analyzing;
                     Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(EncodeItemList[index].Path));
@@ -221,6 +222,8 @@ namespace ShakaCallstackParser.ViewModel
                     Loger.Write(TAG + "OnAnalyzeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + msg);
                     break;
                 case EncodeManager.EncodeCallbackStatus.EncodeStarted:
+                    EncodeItemList[index].Progress = 0;
+                    EncodeItemList[index].ProgressColor = "LimeGreen";
                     EncodeItemList[index].Note = "Encoding";
                     EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.encoding;
                     Loger.Write(TAG + "OnEncodeStarted : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + msg);
@@ -260,6 +263,11 @@ namespace ShakaCallstackParser.ViewModel
                 default:
                     break;
             }
+        }
+
+        private void OnAnalyzeProgressChanged(int index, int percentage)
+        {
+            EncodeItemList[index].Progress = percentage;
         }
 
         private void OnEncodeProgressChanged(int index, int percentage)
