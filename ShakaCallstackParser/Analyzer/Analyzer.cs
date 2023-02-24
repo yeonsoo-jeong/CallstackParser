@@ -88,7 +88,7 @@ namespace ShakaCallstackParser
             crf = result.Item1;
             int result_seconds = result.Item2;
             long result_size = result.Item3;
-            long expect_size = GetExpectedSize(inp_seconds, inp_size, result_seconds, result_size);
+            long expect_size = GetExpectedSize(inp_seconds, result_seconds, result_size);
             Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] Selected crf = " + crf + " input_size =" + inp_size + ", expected_size = " + expect_size);
             if (inp_size <= expect_size)
             {
@@ -196,7 +196,7 @@ namespace ShakaCallstackParser
             return kTargetSSIMGapLimit * 3 <= (kTargetSSIMRangeMin - ssim);
         }
 
-        private long GetExpectedSize(int inp_duration_sec, long inp_size, int result_sec, long result_size)
+        private long GetExpectedSize(int inp_duration_sec, int result_sec, long result_size)
         {
             return (long)((double)inp_duration_sec / (double)result_sec * (double)result_size);
         }

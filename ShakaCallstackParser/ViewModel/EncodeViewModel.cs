@@ -132,9 +132,7 @@ namespace ShakaCallstackParser.ViewModel
 
         public void Init()
         {
-            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStarted,
-                OnEncodeProgressChanged, OnEncodeCanceled, OnEncodeFailed, OnEncodeFinished, OnAllEncodeFinished,
-                OnAnalyzeStarted, OnAnalyzeCanceled, OnAnalyzeFailed, OnAnalyzeFinished);
+            EncodeManager.Callbacks callback = new EncodeManager.Callbacks(OnEncodeStatusChanged, OnEncodeProgressChanged);
 
             enc_item_manager_ = new EncItemManager(EncodeItemList);
             enc_manager_ = new EncodeManager(callback, enc_item_manager_);
@@ -194,126 +192,80 @@ namespace ShakaCallstackParser.ViewModel
             });
         }
 
-        #region Test Callback
-        public enum EncodeCallbackStatus
-        {
-            AnalyzeStarted,
-            AnalyzeCancled,
-            AnalyzeFailed
-        }
-
-        private void OnEncodeStatusChanged(int index, EncodeCallbackStatus status)
+        private void OnEncodeStatusChanged(int index, EncodeManager.EncodeCallbackStatus status, string msg)
         {
             switch (status)
             {
-                case EncodeCallbackStatus.AnalyzeStarted:
+                case EncodeManager.EncodeCallbackStatus.AnalyzeStarted:
                     EncodeItemList[index].Note = "Analyzing";
                     EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.analyzing;
                     Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(EncodeItemList[index].Path));
                     break;
-                case EncodeCallbackStatus.AnalyzeCancled:
+                case EncodeManager.EncodeCallbackStatus.AnalyzeCancled:
                     EncodeItemList[index].Note = "Canceled";
                     EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
                     Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
                     break;
-                case EncodeCallbackStatus.AnalyzeFailed:
+                case EncodeManager.EncodeCallbackStatus.AnalyzeFailed:
+                    EncodeItemList[index].Note = "Analyzation Failed";
+                    if (msg.Length > 0)
+                    {
+                        EncodeItemList[index].Note = msg;
+                    }
+                    EncodeItemList[index].Progress = 100;
+                    EncodeItemList[index].ProgressColor = "Red";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
+                    Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
                     break;
-
-
+                case EncodeManager.EncodeCallbackStatus.AnalyzeFinished:
+                    Loger.Write(TAG + "OnAnalyzeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + msg);
+                    break;
+                case EncodeManager.EncodeCallbackStatus.EncodeStarted:
+                    EncodeItemList[index].Note = "Encoding";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.encoding;
+                    Loger.Write(TAG + "OnEncodeStarted : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + msg);
+                    break;
+                case EncodeManager.EncodeCallbackStatus.EncodeCanceled:
+                    if (is_window_closed_)
+                    {
+                        return;
+                    }
+                    EncodeItemList[index].Note = "Canceled";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
+                    Loger.Write(TAG + "OnEncodeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
+                    break;
+                case EncodeManager.EncodeCallbackStatus.EncodeFailed:
+                    EncodeItemList[index].Note = "Fail";
+                    if (msg.Length > 0)
+                    {
+                        EncodeItemList[index].Note = msg;
+                    }
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
+                    EncodeItemList[index].Progress = 100;
+                    EncodeItemList[index].ProgressColor = "Red";
+                    Loger.Write(TAG + "OnEncodeFailed : " + Path.GetFileName(EncodeItemList[index].Path));
+                    break;
+                case EncodeManager.EncodeCallbackStatus.EncodeFinished:
+                    EncodeItemList[index].Note = "Success";
+                    EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.success;
+                    EncodeItemList[index].Progress = 100;
+                    Loger.Write(TAG + "OnEncodeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
+                    break;
+                case EncodeManager.EncodeCallbackStatus.AllEncodeFinished:
+                    EncModel.BtnEncCancelString = Model.EncodeModel.kBtnLabelEncode;
+                    EncModel.BtnRemoveDoneEnabled = true;
+                    EncModel.BtnChangeDestPathEnabled = true;
+                    Loger.Write(TAG + "OnAllEncodeFinished" + "\r\n");
+                    break;
                 default:
                     break;
             }
-        }
-        #endregion
-
-        #region Analyzer Callback
-        private void OnAnalyzeStarted(int index)
-        {
-            EncodeItemList[index].Note = "Analyzing";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.analyzing;
-            Loger.Write(TAG + "OnAnalyzeStarted : " + Path.GetFileName(EncodeItemList[index].Path));
-        }
-
-        private void OnAnalyzeCanceled(int index)
-        {
-            EncodeItemList[index].Note = "Canceled";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
-            Loger.Write(TAG + "OnAnalyzeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
-        }
-
-        private void OnAnalyzeFailed(int index, string msg)
-        {
-            EncodeItemList[index].Note = "Analyzation Failed";
-            if (msg.Length > 0)
-            {
-                EncodeItemList[index].Note = msg;
-            }
-            EncodeItemList[index].Progress = 100;
-            EncodeItemList[index].ProgressColor = "Red";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
-            Loger.Write(TAG + "OnAnalyzeFailed : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
-        }
-
-        private void OnAnalyzeFinished(int index, int crf)
-        {
-            Loger.Write(TAG + "OnAnalyzeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + crf);
-        }
-        #endregion
-
-        #region Encoder Callback
-        private void OnEncodeStarted(int index, int crf)
-        {
-            EncodeItemList[index].Note = "Encoding";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.encoding;
-            Loger.Write(TAG + "OnEncodeStarted : " + Path.GetFileName(EncodeItemList[index].Path) + ", crf=" + crf);
         }
 
         private void OnEncodeProgressChanged(int index, int percentage)
         {
             EncodeItemList[index].Progress = percentage;
         }
-
-        private void OnEncodeCanceled(int index)
-        {
-            if (is_window_closed_)
-            {
-                return;
-            }
-
-            EncodeItemList[index].Note = "Canceled";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.cancel;
-            Loger.Write(TAG + "OnEncodeCanceled : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
-        }
-
-        private void OnEncodeFailed(int index, int result_code, string msg)
-        {
-            EncodeItemList[index].Note = "Fail";
-            if (msg.Length > 0)
-            {
-                EncodeItemList[index].Note = msg;
-            }
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.fail;
-            EncodeItemList[index].Progress = 100;
-            EncodeItemList[index].ProgressColor = "Red";
-            Loger.Write(TAG + "OnEncodeFailed : " + Path.GetFileName(EncodeItemList[index].Path) + ", result_code=" + result_code);
-        }
-
-        private void OnEncodeFinished(int index)
-        {
-            EncodeItemList[index].Note = "Success";
-            EncodeItemList[index].EncodeStatus = Model.EncodeItem.Status.success;
-            EncodeItemList[index].Progress = 100;
-            Loger.Write(TAG + "OnEncodeFinished : " + Path.GetFileName(EncodeItemList[index].Path) + "\r\n");
-        }
-
-        private void OnAllEncodeFinished()
-        {
-            EncModel.BtnEncCancelString = Model.EncodeModel.kBtnLabelEncode;
-            EncModel.BtnRemoveDoneEnabled = true;
-            EncModel.BtnChangeDestPathEnabled = true;
-            Loger.Write(TAG + "OnAllEncodeFinished" + "\r\n");
-        }
-        #endregion
 
         public void Window_Closed()
         {

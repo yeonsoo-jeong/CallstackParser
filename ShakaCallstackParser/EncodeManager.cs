@@ -14,46 +14,33 @@ namespace ShakaCallstackParser
     {
         const string TAG = "EncodeManager.cs : ";
 
-        public class Callbacks
+        public enum EncodeCallbackStatus
         {
-            public delegate void OnEncodeStarted(int index, int crf);
-            public delegate void OnProgressChanged(int index, int percentage);
-            public delegate void OnEncodeCanceled(int index);
-            public delegate void OnEncodeFailed(int index, int result_code, string msg);
-            public delegate void OnEncodeFinished(int index);
-            public delegate void OnAllEncodeFinished();
-            public delegate void OnAnalyzeStarted(int index);
-            public delegate void OnAnalyzeCanceled(int index);
-            public delegate void OnAnalyzeFailed(int index, string msg);
-            public delegate void OnAnalyzeFinished(int index, int crf);
-            
-            public Callbacks(OnEncodeStarted es, OnProgressChanged pc, OnEncodeCanceled ec, OnEncodeFailed ef, OnEncodeFinished efin, OnAllEncodeFinished aef, 
-                OnAnalyzeStarted ast, OnAnalyzeCanceled ac, OnAnalyzeFailed af, OnAnalyzeFinished afin)
-            {
-                encode_started = es;
-                progress_changed = pc;
-                encode_canceled = ec;
-                encode_failed = ef;
-                encode_finished = efin;
-                all_encode_finished = aef;
-                analyze_started = ast;
-                analyze_canceled = ac;
-                analyze_failed = af;
-                analyze_finished = afin;
-            }
-
-            public OnEncodeStarted encode_started;
-            public OnProgressChanged progress_changed;
-            public OnEncodeCanceled encode_canceled;
-            public OnEncodeFailed encode_failed;
-            public OnEncodeFinished encode_finished;
-            public OnAllEncodeFinished all_encode_finished;
-            public OnAnalyzeStarted analyze_started;
-            public OnAnalyzeCanceled analyze_canceled;
-            public OnAnalyzeFailed analyze_failed;
-            public OnAnalyzeFinished analyze_finished;
+            AnalyzeStarted,
+            AnalyzeCancled,
+            AnalyzeFailed,
+            AnalyzeFinished,
+            EncodeStarted,
+            EncodeCanceled,
+            EncodeFailed,
+            EncodeFinished,
+            AllEncodeFinished
         }
 
+        public class Callbacks
+        {
+            public delegate void OnEncodeStatusChanged(int index, EncodeCallbackStatus status, string msg);
+            public delegate void OnProgressChanged(int index, int percentage);
+
+            public Callbacks(OnEncodeStatusChanged esc, OnProgressChanged pc)
+            {
+                encode_status_changed = esc;
+                progress_changed = pc;
+            }
+
+            public OnEncodeStatusChanged encode_status_changed;
+            public OnProgressChanged progress_changed;
+        }
         private readonly Callbacks callbacks_;
 
         private readonly EncItemManager enc_item_manager_;
@@ -132,7 +119,7 @@ namespace ShakaCallstackParser
 
             if (!is_canceled_)
             {
-                callbacks_.all_encode_finished();
+                callbacks_.encode_status_changed(-1, EncodeCallbackStatus.AllEncodeFinished, "");
             }
             is_encoding_ = false;
 
@@ -169,59 +156,59 @@ namespace ShakaCallstackParser
 
         private Result Analyze(int index, string path, int thread_num, out int crf)
         {
-            callbacks_.analyze_started(index);
+            callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeStarted, "");
 
             Analyzer.AnalyzerResult result = analyzer_.Analyze(path, thread_num, out crf);
             if (is_canceled_)
             {
-                callbacks_.analyze_canceled(index);
+                callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeCancled, "");
                 return Result.fail_stop;
             }
             switch (result)
             {
                 case Analyzer.AnalyzerResult.already_analyzing:
-                    callbacks_.analyze_failed(index, "Error: Already analyzation started.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Error: Already analyzation started.");
                     return Result.fail_stop;
                 case Analyzer.AnalyzerResult.fail:
-                    callbacks_.analyze_failed(index, "Unexpected error occured.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
                     return Result.fail_continue;
                 case Analyzer.AnalyzerResult.size_over:
-                    callbacks_.analyze_failed(index, "It is not expected to decrease in size.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "It is not expected to decrease in size.");
                     return Result.fail_continue;
             }
             if (crf < 0)
             {
-                callbacks_.analyze_failed(index, "Unexpected error occured.");
+                callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
                 return Result.fail_continue;
             }
-            callbacks_.analyze_finished(index, crf);
+            callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFinished, crf.ToString());
 
             return Result.success;
         }
 
         private Result Encode(int index, string path, string out_directory, int thread_num, int crf)
         {
-            callbacks_.encode_started(index, crf);
+            callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeStarted, crf.ToString());
             Encoder.EncoderResult result = encoder_.Encode(index, path, out_directory, thread_num, crf, out int return_code, out double ssim);
             if (is_canceled_)
             {
-                callbacks_.encode_canceled(index);
+                callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeCanceled, "");
                 return Result.fail_stop;
             }
             
             switch (result)
             {
                 case Encoder.EncoderResult.already_encoding:
-                    callbacks_.encode_failed(index, return_code, "Error: Already encoding started.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Error: Already encoding started.(" + return_code + ")");
                     return Result.fail_stop;
                 case Encoder.EncoderResult.size_over:
-                    callbacks_.encode_failed(index, return_code, "Encoding succeeded, but the file size did not decrease.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Encoding succeeded, but the file size did not decrease.(" + return_code + ")");
                     return Result.fail_continue;
                 case Encoder.EncoderResult.fail:
-                    callbacks_.encode_failed(index, return_code, "Unexpected error occured.");
+                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Unexpected error occured.(" + return_code + ")");
                     return Result.fail_continue;
             }
-            callbacks_.encode_finished(index);
+            callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFinished, "");
 
             return Result.success;
         }
