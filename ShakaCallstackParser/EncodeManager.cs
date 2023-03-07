@@ -94,7 +94,7 @@ namespace ShakaCallstackParser
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                result = Analyze(index, path, thread_num, out int crf);
+                result = Analyze(index, path, thread_num, out int crf, out long expect_size);
                 stopwatch.Stop();
                 Loger.Write(TAG + "Start : Analyzation Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
@@ -107,7 +107,7 @@ namespace ShakaCallstackParser
                 }
 
                 stopwatch.Start();
-                result = Encode(index, path, out_directory, thread_num, crf);
+                result = Encode(index, path, out_directory, thread_num, crf, expect_size);
                 stopwatch.Stop();
                 Loger.Write(TAG + "Start : Encoding Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
@@ -166,11 +166,11 @@ namespace ShakaCallstackParser
             callbacks_.encode_progress_changed(index, percentage);
         }
 
-        private Result Analyze(int index, string path, int thread_num, out int crf)
+        private Result Analyze(int index, string path, int thread_num, out int crf, out long expect_size)
         {
             callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeStarted, "");
 
-            Analyzer.AnalyzerResult result = analyzer_.Analyze(index, path, thread_num, out crf);
+            Analyzer.AnalyzerResult result = analyzer_.Analyze(index, path, thread_num, out crf, out expect_size);
             if (is_canceled_)
             {
                 callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeCancled, "");
@@ -198,10 +198,10 @@ namespace ShakaCallstackParser
             return Result.success;
         }
 
-        private Result Encode(int index, string path, string out_directory, int thread_num, int crf)
+        private Result Encode(int index, string path, string out_directory, int thread_num, int crf, long expect_size)
         {
             callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeStarted, crf.ToString());
-            Encoder.EncoderResult result = encoder_.Encode(index, path, out_directory, thread_num, crf, out int return_code, out double ssim);
+            Encoder.EncoderResult result = encoder_.Encode(index, path, out_directory, thread_num, crf, expect_size, out int return_code, out double ssim);
             if (is_canceled_)
             {
                 callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeCanceled, "");

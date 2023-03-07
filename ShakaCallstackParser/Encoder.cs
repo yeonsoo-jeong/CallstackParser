@@ -40,7 +40,7 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
         }
 
-        public EncoderResult Encode(int index, string inpPath, string out_directory, int thread_num, int crf, out int ffmpeg_return_code, out double ret_ssim)
+        public EncoderResult Encode(int index, string inpPath, string out_directory, int thread_num, int crf, long expect_size, out int ffmpeg_return_code, out double ret_ssim)
         {
             ffmpeg_return_code = -1;
             ret_ssim = -1;
@@ -142,6 +142,21 @@ namespace ShakaCallstackParser
                 {
                     CustomRename(Path.GetFileName(inpPath), encoding_path);
                     EncodingFileManager.EncodingFinished(encoding_path);
+                }
+
+                double inp_size_mb = Math.Truncate((double)inp_size / 1024 / 1024);
+                double enc_size_mb = Math.Truncate((double)enc_size / 1024 / 1024);
+                double exp_size_mb = Math.Truncate((double)expect_size / 1024);
+                if (inp_size_mb <= 0 || enc_size_mb <= 0 || exp_size_mb <= 0)
+                {
+                    Loger.Write(TAG + "Encode : one of these less than 0. inp_size=" + inp_size_mb + "M, result_size=" + enc_size_mb + "M, expect_size=" + exp_size_mb + "M");
+                } 
+                else
+                {
+                    double expect_ratio = Math.Round(enc_size_mb / exp_size_mb, 2);
+                    double inp_ratio = Math.Round(enc_size_mb / inp_size_mb, 2);
+                    Loger.Write(TAG + "Encode : expect_size=" + exp_size_mb + "M, result_size=" + enc_size_mb + "M, ratio=" + expect_ratio);
+                    Loger.Write(TAG + "Encode : inp_size=" + inp_size_mb + "M, result_size=" + enc_size_mb + "M, ratio=" + inp_ratio);
                 }
             }
             

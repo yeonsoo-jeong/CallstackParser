@@ -46,10 +46,11 @@ namespace ShakaCallstackParser
             ssim_calculator_ = new SSIMCalculator();
         }
 
-        public AnalyzerResult Analyze(int index, string path, int thread_num, out int crf)
+        public AnalyzerResult Analyze(int index, string path, int thread_num, out int crf, out long expect_size)
         {
             parent_index = index;
             crf = -1;
+            expect_size = -1;
 
             if (is_analyzing_)
             {
@@ -103,11 +104,11 @@ namespace ShakaCallstackParser
             crf = result.Item1;
             int result_seconds = result.Item2;
             long result_size = result.Item3;
-            long expect_size = GetExpectedSize(inp_seconds, result_seconds, result_size);
-            Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] Selected crf = " + crf + " input_size =" + inp_size + ", expected_size = " + expect_size);
+            expect_size = GetExpectedSize(inp_seconds, result_seconds, result_size);
+            Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] selected crf=" + crf + ", input_size=" + inp_size + "K, expected_size=" + expect_size + "K, ratio=" + Math.Round(expect_size / (float)inp_size, 2));
             if (inp_size <= expect_size)
             {
-                Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + ", expected_size=" + expect_size);
+                Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + "K, expected_size=" + expect_size + "K");
                 return AnalyzerResult.size_over;
             }
             if (crf < 0)
@@ -143,7 +144,7 @@ namespace ShakaCallstackParser
                 double avg_ssim = tuple.Item1;
                 result_seconds = tuple.Item2;
                 result_size = tuple.Item3;
-                Loger.Write(TAG + "AnalyzeJobs : size_sum = " + result_size + ", size_second = " + result_seconds + ", avg_ssim = " + avg_ssim);
+                Loger.Write(TAG + "AnalyzeJobs : size_sum=" + result_size + ", size_second=" + result_seconds + ", avg_ssim=" + Math.Round(avg_ssim, 4));
 
                 if (is_canceled_ || avg_ssim < 0)
                 {
@@ -168,17 +169,17 @@ namespace ShakaCallstackParser
                 if (current_index + 3 < jobs.Count() && IsSSIMGapTripleOver(avg_ssim))
                 {
                     current_index += 3;
-                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is triple over. skip next 3 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is triple over. skip next 3 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 } 
                 else if (current_index + 2 < jobs.Count() && IsSSIMGapDoubleOver(avg_ssim))
                 {
                     current_index += 2;
-                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is doubled over. skip next 2 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is doubled over. skip next 2 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 }
                 else if (current_index + 1 < jobs.Count() && IsSSIMGapOver(avg_ssim))
                 {
                     current_index++;
-                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + (kTargetSSIMRangeMin - avg_ssim));
+                    Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 }
 
                 int percentage = (int)((double)current_index / jobs.Count() * 100.0f);

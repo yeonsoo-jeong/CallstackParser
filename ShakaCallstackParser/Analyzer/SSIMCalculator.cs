@@ -47,7 +47,7 @@ namespace ShakaCallstackParser
                         // Log
                         string name = Path.GetFileName(path);
                         string msg = TAG + "name=" + name + ", crf=" + crf + ", start_time=" +
-                            time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + ssim_result + ", size=" + sz;
+                            time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + Math.Round(ssim_result, 4) + ", size=" + sz;
                         Loger.Write(msg);
                     }
 
