@@ -14,7 +14,7 @@ namespace ShakaCallstackParser
     {
         public class Callbacks
         {
-            public delegate void OnProgressChanged(int index, int percentage);
+            public delegate void OnProgressChanged(int id, int percentage);
             public Callbacks(OnProgressChanged pc)
             {
                 progress_changed = pc;
@@ -38,7 +38,7 @@ namespace ShakaCallstackParser
 
         bool is_analyzing_ = false;
         bool is_canceled_ = false;
-        int parent_index = -1;
+        int parent_id_ = -1;
 
         public Analyzer(Callbacks callback)
         {
@@ -46,9 +46,9 @@ namespace ShakaCallstackParser
             ssim_calculator_ = new SSIMCalculator();
         }
 
-        public AnalyzerResult Analyze(int index, string path, int thread_num, out int crf, out long expect_size)
+        public AnalyzerResult Analyze(int id, string path, int thread_num, out int crf, out long expect_size)
         {
-            parent_index = index;
+            parent_id_ = id;
             crf = -1;
             expect_size = -1;
 
@@ -183,7 +183,7 @@ namespace ShakaCallstackParser
                 }
 
                 int percentage = (int)((double)current_index / jobs.Count() * 100.0f);
-                callbacks_.progress_changed(parent_index, percentage);
+                callbacks_.progress_changed(parent_id_, percentage);
             }
             
             return new Tuple<int, int, long>(result_crf, result_seconds, result_size);

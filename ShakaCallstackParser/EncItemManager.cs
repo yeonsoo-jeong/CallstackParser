@@ -13,6 +13,8 @@ namespace ShakaCallstackParser
     {
         ObservableCollection<EncodeItem> enc_items_;
 
+        long id_ = 0;
+
         public EncItemManager(ObservableCollection<EncodeItem> items)
         {
             enc_items_ = items;
@@ -23,12 +25,13 @@ namespace ShakaCallstackParser
             return enc_items_;
         }
 
-        public int GetIndexByNumber(int number)
+        // To be applied
+        public int GetIndexById(int id)
         {
-            string num_str = number.ToString();
+            string id_str = id.ToString();
             for (int i = 0; i < enc_items_.Count; i++)
             {
-                if (enc_items_[i].Number == num_str)
+                if (enc_items_[i].Id == id_str)
                 {
                     return i;
                 }
@@ -106,6 +109,8 @@ namespace ShakaCallstackParser
                 foreach (string file in files)
                 {
                     EncodeItem item = new EncodeItem();
+                    item.Id = id_.ToString();
+                    id_++;
                     item.Path = file;
                     item.CpuUsage = new List<string>(EncWindow.kCpuUsageItems);
                     item.CpuUsageSelected = cpu_usage;
@@ -116,7 +121,6 @@ namespace ShakaCallstackParser
                 List<EncodeItem> temp = enc_items_.Distinct(new EncListComparer()).ToList();
                 enc_items_.Clear();
                 temp.ForEach(x => enc_items_.Add(x));
-                //enc_items_ = ;
                 ReorderEncListNumber();
             }
         }

@@ -40,6 +40,17 @@ namespace ShakaCallstackParser.Model
             return false;
         }
 
+        private string id;
+        public string Id
+        {
+            get { return id; }
+            set
+            {
+                id = value;
+                OnPropertyChanged("Id");
+            }
+        }
+
         private string number;
         public string Number
         {

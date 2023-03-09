@@ -20,7 +20,7 @@ namespace ShakaCallstackParser
 
         public class Callbacks
         {
-            public delegate void OnProgressChanged(int index, int percentage);
+            public delegate void OnProgressChanged(int id, int percentage);
             public Callbacks(OnProgressChanged pc)
             {
                 progress_changed = pc;
@@ -40,7 +40,7 @@ namespace ShakaCallstackParser
             callbacks_ = callback;
         }
 
-        public EncoderResult Encode(int index, string inpPath, string out_directory, int thread_num, int crf, long expect_size, out int ffmpeg_return_code, out double ret_ssim)
+        public EncoderResult Encode(int id, string inpPath, string out_directory, int thread_num, int crf, long expect_size, out int ffmpeg_return_code, out double ret_ssim)
         {
             ffmpeg_return_code = -1;
             ret_ssim = -1;
@@ -101,7 +101,7 @@ namespace ShakaCallstackParser
                                 string substr = readStr.Substring(idx + 5, 11);
                                 int seconds = CalculateSeconds(substr);
                                 int percentage = Convert.ToInt32((float)seconds / (float)duration_seconds * 100);
-                                OnProgressChanged(index, percentage);
+                                OnProgressChanged(id, percentage);
                             }
                         }
                     }
@@ -254,9 +254,9 @@ namespace ShakaCallstackParser
             }
         }
 
-        private void OnProgressChanged(int index, int percentage)
+        private void OnProgressChanged(int id, int percentage)
         {
-            callbacks_.progress_changed(index, percentage);
+            callbacks_.progress_changed(id, percentage);
             //MessageBox.Show(e.ProgressPercentage.ToString() + "%");
         }
 

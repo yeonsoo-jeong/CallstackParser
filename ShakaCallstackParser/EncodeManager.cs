@@ -29,9 +29,9 @@ namespace ShakaCallstackParser
 
         public class Callbacks
         {
-            public delegate void OnEncodeStatusChanged(int index, EncodeCallbackStatus status, string msg);
-            public delegate void OnAnalyzeProgressChanged(int index, int percentage);
-            public delegate void OnEncodeProgressChanged(int index, int percentage);
+            public delegate void OnEncodeStatusChanged(int id, EncodeCallbackStatus status, string msg);
+            public delegate void OnAnalyzeProgressChanged(int id, int percentage);
+            public delegate void OnEncodeProgressChanged(int id, int percentage);
 
             public Callbacks(OnEncodeStatusChanged esc, OnAnalyzeProgressChanged apc, OnEncodeProgressChanged epc)
             {
@@ -86,15 +86,14 @@ namespace ShakaCallstackParser
             while (enc_item_manager_.GetToEncodeItemsNum() > 0)
             {
                 EncodeItem enc_list_item = enc_item_manager_.GetToEncodeFirstItem();
-                int number = Convert.ToInt32(enc_list_item.Number);
-                int index = enc_item_manager_.GetIndexByNumber(number);
+                int id = Convert.ToInt32(enc_list_item.Id);
                 string path = enc_list_item.Path;
                 int thread_num = GetCoreNumFromCpuUsage(enc_list_item.CpuUsageSelected);
                 Result result;
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                result = Analyze(index, path, thread_num, out int crf, out long expect_size);
+                result = Analyze(id, path, thread_num, out int crf, out long expect_size);
                 stopwatch.Stop();
                 Loger.Write(TAG + "Start : Analyzation Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
@@ -107,7 +106,7 @@ namespace ShakaCallstackParser
                 }
 
                 stopwatch.Start();
-                result = Encode(index, path, out_directory, thread_num, crf, expect_size);
+                result = Encode(id, path, out_directory, thread_num, crf, expect_size);
                 stopwatch.Stop();
                 Loger.Write(TAG + "Start : Encoding Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
                 if (result == Result.fail_stop)
@@ -148,79 +147,79 @@ namespace ShakaCallstackParser
             analyzer_.OnWindowClosed();
         }
 
-        private void AnalyzeProgressChanged(int index, int percentage)
+        private void AnalyzeProgressChanged(int id, int percentage)
         {
             if (is_canceled_)
             {
                 return;
             }
-            callbacks_.analyze_progress_changed(index, percentage);
+            callbacks_.analyze_progress_changed(id, percentage);
         }
 
-        private void EncodeProgressChanged(int index, int percentage)
+        private void EncodeProgressChanged(int id, int percentage)
         {
             if (is_canceled_)
             {
                 return;
             }
-            callbacks_.encode_progress_changed(index, percentage);
+            callbacks_.encode_progress_changed(id, percentage);
         }
 
-        private Result Analyze(int index, string path, int thread_num, out int crf, out long expect_size)
+        private Result Analyze(int id, string path, int thread_num, out int crf, out long expect_size)
         {
-            callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeStarted, "");
+            callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeStarted, "");
 
-            Analyzer.AnalyzerResult result = analyzer_.Analyze(index, path, thread_num, out crf, out expect_size);
+            Analyzer.AnalyzerResult result = analyzer_.Analyze(id, path, thread_num, out crf, out expect_size);
             if (is_canceled_)
             {
-                callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeCancled, "");
+                callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeCancled, "");
                 return Result.fail_stop;
             }
             switch (result)
             {
                 case Analyzer.AnalyzerResult.already_analyzing:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Error: Already analyzation started.");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeFailed, "Error: Already analyzation started.");
                     return Result.fail_stop;
                 case Analyzer.AnalyzerResult.fail:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
                     return Result.fail_continue;
                 case Analyzer.AnalyzerResult.size_over:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "It is not expected to decrease in size.");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeFailed, "It is not expected to decrease in size.");
                     return Result.fail_continue;
             }
             if (crf < 0)
             {
-                callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
+                callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeFailed, "Unexpected error occured.");
                 return Result.fail_continue;
             }
-            callbacks_.encode_status_changed(index, EncodeCallbackStatus.AnalyzeFinished, crf.ToString());
+            callbacks_.encode_status_changed(id, EncodeCallbackStatus.AnalyzeFinished, crf.ToString());
 
             return Result.success;
         }
 
-        private Result Encode(int index, string path, string out_directory, int thread_num, int crf, long expect_size)
+        private Result Encode(int id, string path, string out_directory, int thread_num, int crf, long expect_size)
         {
-            callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeStarted, crf.ToString());
-            Encoder.EncoderResult result = encoder_.Encode(index, path, out_directory, thread_num, crf, expect_size, out int return_code, out double ssim);
+            callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeStarted, crf.ToString());
+            Encoder.EncoderResult result = encoder_.Encode(id, path, out_directory, thread_num, crf, expect_size, out int return_code, out double ssim);
             if (is_canceled_)
             {
-                callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeCanceled, "");
+                callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeCanceled, "");
                 return Result.fail_stop;
             }
             
             switch (result)
             {
                 case Encoder.EncoderResult.already_encoding:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Error: Already encoding started.(" + return_code + ")");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFailed, "Error: Already encoding started.(" + return_code + ")");
                     return Result.fail_stop;
                 case Encoder.EncoderResult.size_over:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Encoding succeeded, but the file size did not decrease.(" + return_code + ")");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFailed, "Encoding succeeded, but the file size did not decrease.(" + return_code + ")");
                     return Result.fail_continue;
                 case Encoder.EncoderResult.fail:
-                    callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFailed, "Unexpected error occured.(" + return_code + ")");
+                    callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFailed, "Unexpected error occured.(" + return_code + ")");
                     return Result.fail_continue;
             }
-            callbacks_.encode_status_changed(index, EncodeCallbackStatus.EncodeFinished, "");
+            callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFinished, "");
 
             return Result.success;
         }

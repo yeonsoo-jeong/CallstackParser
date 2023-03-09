@@ -192,8 +192,9 @@ namespace ShakaCallstackParser.ViewModel
             });
         }
 
-        private void OnEncodeStatusChanged(int index, EncodeManager.EncodeCallbackStatus status, string msg)
+        private void OnEncodeStatusChanged(int id, EncodeManager.EncodeCallbackStatus status, string msg)
         {
+            int index = enc_item_manager_.GetIndexById(id);
             switch (status)
             {
                 case EncodeManager.EncodeCallbackStatus.AnalyzeStarted:
@@ -265,13 +266,15 @@ namespace ShakaCallstackParser.ViewModel
             }
         }
 
-        private void OnAnalyzeProgressChanged(int index, int percentage)
+        private void OnAnalyzeProgressChanged(int id, int percentage)
         {
+            int index = enc_item_manager_.GetIndexById(id);
             EncodeItemList[index].Progress = percentage;
         }
 
-        private void OnEncodeProgressChanged(int index, int percentage)
+        private void OnEncodeProgressChanged(int id, int percentage)
         {
+            int index = enc_item_manager_.GetIndexById(id);
             EncodeItemList[index].Progress = percentage;
         }
 
