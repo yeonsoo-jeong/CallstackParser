@@ -39,11 +39,12 @@ namespace ShakaCallstackParser
         bool is_analyzing_ = false;
         bool is_canceled_ = false;
         int parent_id_ = -1;
+        int current_index_ = -1;
 
         public Analyzer(Callbacks callback)
         {
             callbacks_ = callback;
-            ssim_calculator_ = new SSIMCalculator();
+            ssim_calculator_ = new SSIMCalculator(new SSIMCalculator.Callbacks(OnSSIMCalculatorProgressChanged));
         }
 
         public AnalyzerResult Analyze(int id, string path, int thread_num, out int crf, out long expect_size)
@@ -93,7 +94,7 @@ namespace ShakaCallstackParser
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 25, time_pair));
             analyze_jobs_.Add(new AnalyzeJob(path, thread_num, 24, time_pair));
 
-            Tuple<int, int, long> result = AnalyzeJobs(analyze_jobs_);
+            Tuple<int, int, long> result = AnalyzeJobs();
             if (is_canceled_)
             {
                 is_analyzing_ = false;
@@ -131,15 +132,25 @@ namespace ShakaCallstackParser
             ssim_calculator_.OnWindowClosed();
         }
 
-        private Tuple<int, int, long> AnalyzeJobs(List<AnalyzeJob> jobs)
+        private void OnSSIMCalculatorProgressChanged(int percentage)
+        {
+            double job_num = analyze_jobs_.Count();
+            int base_percentage = (int)(current_index_ / job_num * 100);
+            double scale_factor = 1.0f / job_num;
+            int actual_percentage = (int)(percentage * scale_factor + base_percentage);
+            callbacks_.progress_changed(parent_id_, actual_percentage);
+        }
+
+        private Tuple<int, int, long> AnalyzeJobs()
         {
             int result_crf = -1;
             int result_seconds = -1;
             long result_size = -1;
-            int current_index = 0;
-            while (jobs.Count() > current_index)
+            current_index_ = 0;
+            ref List<AnalyzeJob> jobs = ref analyze_jobs_;
+            while (jobs.Count() > current_index_)
             {
-                AnalyzeJob job = jobs[current_index];
+                AnalyzeJob job = jobs[current_index_];
                 Tuple<double, int, long> tuple = ssim_calculator_.CalculateAverageSSIM(job.path, job.thread_num, job.crf, job.time_pair_list);
                 double avg_ssim = tuple.Item1;
                 result_seconds = tuple.Item2;
@@ -158,31 +169,31 @@ namespace ShakaCallstackParser
                     break;
                 }
 
-                current_index++;
-                if (current_index >= jobs.Count())
+                current_index_++;
+                if (current_index_ >= jobs.Count())
                 {
                     result_crf = job.crf;
                     AnalyzeFinished();
                     break;
                 }
 
-                if (current_index + 3 < jobs.Count() && IsSSIMGapTripleOver(avg_ssim))
+                if (current_index_ + 3 < jobs.Count() && IsSSIMGapTripleOver(avg_ssim))
                 {
-                    current_index += 3;
+                    current_index_ += 3;
                     Loger.Write(TAG + "AnalyzeJobs : ssim gap is triple over. skip next 3 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 } 
-                else if (current_index + 2 < jobs.Count() && IsSSIMGapDoubleOver(avg_ssim))
+                else if (current_index_ + 2 < jobs.Count() && IsSSIMGapDoubleOver(avg_ssim))
                 {
-                    current_index += 2;
+                    current_index_ += 2;
                     Loger.Write(TAG + "AnalyzeJobs : ssim gap is doubled over. skip next 2 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 }
-                else if (current_index + 1 < jobs.Count() && IsSSIMGapOver(avg_ssim))
+                else if (current_index_ + 1 < jobs.Count() && IsSSIMGapOver(avg_ssim))
                 {
-                    current_index++;
+                    current_index_++;
                     Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 }
 
-                int percentage = (int)((double)current_index / jobs.Count() * 100.0f);
+                int percentage = (int)((double)current_index_ / jobs.Count() * 100.0f);
                 callbacks_.progress_changed(parent_id_, percentage);
             }
             

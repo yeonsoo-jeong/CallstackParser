@@ -15,13 +15,26 @@ namespace ShakaCallstackParser
 {
     class SSIMCalculator
     {
+        public class Callbacks
+        {
+            public delegate void OnProgressChanged(int percentage);
+            public Callbacks(OnProgressChanged pc)
+            {
+                progress_changed = pc;
+            }
+
+            public OnProgressChanged progress_changed;
+        }
+        Callbacks callbacks_;
+
         const string TAG = "SSIMCalculator.cs : ";
 
         Process enc_process_ = null;
         bool is_canceled_ = false;
 
-        public SSIMCalculator()
+        public SSIMCalculator(Callbacks callback)
         {
+            callbacks_ = callback;
         }
 
         public Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
@@ -59,9 +72,11 @@ namespace ShakaCallstackParser
                         size_sec += time_list[i].duration;
                     }
 
-
                     count++;
                 }
+
+                int percentage = (int)((i + 1) / (double)(time_list.Count()+1) * 100);
+                callbacks_.progress_changed(percentage);
             }
 
             if (count > 0)
