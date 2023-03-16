@@ -55,67 +55,77 @@ namespace ShakaCallstackParser
             string encoding_path = out_directory + "\\" + kEncodingPrefix + Path.GetFileName(inpPath);
             string encoding_option = GetEncodingOption(inpPath, encoding_path, thread_num, crf);
 
-            using (enc_process_ = new Process())
+
+            try
             {
-                EncodingFileManager.EncodingStarted(encoding_path);
-
-                enc_process_.EnableRaisingEvents = true;
-                enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = encoding_option;
-
-                Loger.Write(TAG + "Encode : option = " + enc_process_.StartInfo.Arguments);
-
-                enc_process_.StartInfo.WorkingDirectory = "";
-                enc_process_.StartInfo.CreateNoWindow = true;
-                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                enc_process_.StartInfo.RedirectStandardOutput = true;
-                enc_process_.StartInfo.RedirectStandardError = true;
-                enc_process_.Start();
-
-                string readStr = "";
-                int duration_seconds = -1;
-
-                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
+                using (enc_process_ = new Process())
                 {
-                    if (is_canceled_)
-                    {
-                        is_encoding_ = false;
-                        return EncoderResult.fail;
-                    }
+                    EncodingFileManager.EncodingStarted(encoding_path);
 
-                    if (duration_seconds == -1)
+                    enc_process_.EnableRaisingEvents = true;
+                    enc_process_.StartInfo.FileName = "ffmpeg.exe";
+                    enc_process_.StartInfo.Arguments = encoding_option;
+
+                    Loger.Write(TAG + "Encode : option = " + enc_process_.StartInfo.Arguments);
+
+                    enc_process_.StartInfo.WorkingDirectory = "";
+                    enc_process_.StartInfo.CreateNoWindow = true;
+                    enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                    enc_process_.StartInfo.RedirectStandardOutput = true;
+                    enc_process_.StartInfo.RedirectStandardError = true;
+                    enc_process_.Start();
+
+                    string readStr = "";
+                    int duration_seconds = -1;
+
+                    while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                     {
-                        if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
+                        if (is_canceled_)
                         {
-                            string substr = readStr.Substring(12, 11);
-                            duration_seconds = CalculateSeconds(substr);
+                            is_encoding_ = false;
+                            return EncoderResult.fail;
                         }
-                    } 
-                    else
-                    {
-                        if (readStr.Length > 6 && readStr.Substring(0, 6) == "frame=")
+
+                        if (duration_seconds == -1)
                         {
-                            int idx = readStr.IndexOf("time=");
-                            if (idx >= 0)
+                            if (readStr.Length > 12 && readStr.Substring(0, 12) == "  Duration: ")
                             {
-                                string substr = readStr.Substring(idx + 5, 11);
-                                int seconds = CalculateSeconds(substr);
-                                int percentage = Convert.ToInt32((float)seconds / (float)duration_seconds * 100);
-                                OnProgressChanged(id, percentage);
+                                string substr = readStr.Substring(12, 11);
+                                duration_seconds = CalculateSeconds(substr);
                             }
                         }
+                        else
+                        {
+                            if (readStr.Length > 6 && readStr.Substring(0, 6) == "frame=")
+                            {
+                                int idx = readStr.IndexOf("time=");
+                                if (idx >= 0)
+                                {
+                                    string substr = readStr.Substring(idx + 5, 11);
+                                    int seconds = CalculateSeconds(substr);
+                                    int percentage = Convert.ToInt32((float)seconds / (float)duration_seconds * 100);
+                                    OnProgressChanged(id, percentage);
+                                }
+                            }
+                        }
+
+                        double parse_ssim = FFmpegUtil.ParseSSIM(readStr);
+                        if (parse_ssim >= 0)
+                        {
+                            ret_ssim = parse_ssim;
+                        }
+                        System.Threading.Thread.Sleep(10);
                     }
 
-                    double parse_ssim = FFmpegUtil.ParseSSIM(readStr);
-                    if (parse_ssim >= 0)
-                    {
-                        ret_ssim = parse_ssim;
-                    }
-                    System.Threading.Thread.Sleep(10);
+                    enc_process_.WaitForExit();
+                    ffmpeg_return_code = enc_process_.ExitCode;
                 }
-
-                enc_process_.WaitForExit();
-                ffmpeg_return_code = enc_process_.ExitCode;
+            }
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "Encode : " + e.ToString());
+                is_encoding_ = false;
+                return EncoderResult.fail;
             }
 
             if (is_canceled_)

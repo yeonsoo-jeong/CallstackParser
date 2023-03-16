@@ -9,6 +9,7 @@ namespace YsCommon
 {
     class Loger
     {
+        private static string TAG = "Loger.cs : ";
         const string kLogPath = "log.txt";
 
         public static void Write(string []msg)
@@ -18,9 +19,16 @@ namespace YsCommon
 
         public static void Write(string msg)
         {
-            using (var writer = new StreamWriter(kLogPath, append: true))
+            try
             {
-                writer.WriteLine(msg);
+                using (var writer = new StreamWriter(kLogPath, append: true))
+                {
+                    writer.WriteLine(msg);
+                }
+            }
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "Write : " + e.ToString());
             }
         }
     }

@@ -52,28 +52,27 @@ namespace ShakaCallstackParser
                 {
                     return new Tuple<double, int, long>(-1, -1, -1);
                 }
+
                 double ssim_result = result.Item1;
                 long sz = result.Item2;
-                if (ssim_result > 0)
+                if (ssim_result <= 0 || sz <= 0)
                 {
-                    {
-                        // Log
-                        string name = Path.GetFileName(path);
-                        string msg = TAG + "name=" + name + ", crf=" + crf + ", start_time=" +
-                            time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + Math.Round(ssim_result, 4) + ", size=" + sz;
-                        Loger.Write(msg);
-                    }
-
-                    ssim_sum += ssim_result;
-
-                    if (sz > 0)
-                    {
-                        size += sz;
-                        size_sec += time_list[i].duration;
-                    }
-
-                    count++;
+                    return new Tuple<double, int, long>(-1, -1, -1);
                 }
+
+                {
+                    // Log
+                    string name = Path.GetFileName(path);
+                    string msg = TAG + "name=" + name + ", crf=" + crf + ", start_time=" +
+                        time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + Math.Round(ssim_result, 4) + ", size=" + sz;
+                    Loger.Write(msg);
+                }
+
+                ssim_sum += ssim_result;
+                size += sz;
+                size_sec += time_list[i].duration;
+
+                count++;
 
                 int percentage = (int)((i + 1) / (double)(time_list.Count()+1) * 100);
                 callbacks_.progress_changed(percentage);
@@ -134,40 +133,48 @@ namespace ShakaCallstackParser
                 interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
             }
 
-            using (enc_process_ = new Process())
+            try
             {
-                enc_process_.EnableRaisingEvents = true;
-                enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                enc_process_.StartInfo.Arguments = "-y -vsync passthrough -threads " + thread_num + " -i \"" + path + "\"" + interlace_option + " -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
-                enc_process_.StartInfo.WorkingDirectory = "";
-                enc_process_.StartInfo.CreateNoWindow = true;
-                enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                enc_process_.StartInfo.RedirectStandardOutput = true;
-                enc_process_.StartInfo.RedirectStandardError = true;
-                enc_process_.Start();
-
-                string readStr = "";
-                while ((readStr = enc_process_.StandardError.ReadLine()) != null)
+                using (enc_process_ = new Process())
                 {
-                    if (is_canceled_)
-                    {
-                        break;
-                    }
+                    enc_process_.EnableRaisingEvents = true;
+                    enc_process_.StartInfo.FileName = "ffmpeg.exe";
+                    enc_process_.StartInfo.Arguments = "-y -vsync passthrough -threads " + thread_num + " -i \"" + path + "\"" + interlace_option + " -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
+                    enc_process_.StartInfo.WorkingDirectory = "";
+                    enc_process_.StartInfo.CreateNoWindow = true;
+                    enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                    enc_process_.StartInfo.RedirectStandardOutput = true;
+                    enc_process_.StartInfo.RedirectStandardError = true;
+                    enc_process_.Start();
 
-                    long sz = FFmpegUtil.ParseSize(readStr);
-                    if (sz >= 0)
+                    string readStr = "";
+                    while ((readStr = enc_process_.StandardError.ReadLine()) != null)
                     {
-                        size = sz;
-                    }
+                        if (is_canceled_)
+                        {
+                            break;
+                        }
 
-                    double result = FFmpegUtil.ParseSSIM(readStr);
-                    if (result >= 0)
-                    {
-                        ssim = result;
-                        break;
+                        long sz = FFmpegUtil.ParseSize(readStr);
+                        if (sz >= 0)
+                        {
+                            size = sz;
+                        }
+
+                        double result = FFmpegUtil.ParseSSIM(readStr);
+                        if (result >= 0)
+                        {
+                            ssim = result;
+                            break;
+                        }
+                        System.Threading.Thread.Sleep(10);
                     }
-                    System.Threading.Thread.Sleep(10);
                 }
+            }
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "CalculateSSIM : " + e.ToString());
+                return new Tuple<double, long>(-1, -1);
             }
 
             return new Tuple<double, long>(ssim, size);

@@ -15,9 +15,16 @@ namespace YsCommon
 
         public static void EncodingStarted(string path)
         {
-            using (StreamWriter writer = File.AppendText(kManageFilePath))
+            try
             {
-                writer.WriteLine(path);
+                using (StreamWriter writer = File.AppendText(kManageFilePath))
+                {
+                    writer.WriteLine(path);
+                }
+            }
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "EncodingStarted : " + e.ToString());
             }
         }
 
