@@ -9,34 +9,43 @@ namespace YsCommon
 {
     class FFmpegUtil
     {
+        private static string TAG = "FFmpegUtil.cs : ";
         public static int GetDurationSec(string path)
         {
-            using (Process p = new Process())
+            try
             {
-                p.EnableRaisingEvents = true;
-                p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + path + "\" -c copy -f null /dev/null";
-                p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.RedirectStandardError = true;
-                p.Start();
-
-                string readStr = "";
-                int duration_seconds = -1;
-                while ((readStr = p.StandardError.ReadLine()) != null)
+                using (Process p = new Process())
                 {
-                    int sec = ParseDurationSeconds(readStr);
-                    if (sec >= 0)
-                    {
-                        duration_seconds = sec;
-                        break;
-                    }
-                    System.Threading.Thread.Sleep(10);
-                }
+                    p.EnableRaisingEvents = true;
+                    p.StartInfo.FileName = "ffmpeg.exe";
+                    p.StartInfo.Arguments = "-y -i \"" + path + "\" -c copy -f null /dev/null";
+                    p.StartInfo.WorkingDirectory = "";
+                    p.StartInfo.CreateNoWindow = true;
+                    p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                    p.StartInfo.RedirectStandardOutput = true;
+                    p.StartInfo.RedirectStandardError = true;
+                    p.Start();
 
-                return duration_seconds;
+                    string readStr = "";
+                    int duration_seconds = -1;
+                    while ((readStr = p.StandardError.ReadLine()) != null)
+                    {
+                        int sec = ParseDurationSeconds(readStr);
+                        if (sec >= 0)
+                        {
+                            duration_seconds = sec;
+                            break;
+                        }
+                        System.Threading.Thread.Sleep(10);
+                    }
+
+                    return duration_seconds;
+                }
+            } 
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "GetDurationSec : " + e.ToString());
+                return -1;
             }
         }
 
@@ -45,42 +54,50 @@ namespace YsCommon
             int duration_seconds = -1;
             long size = -1;
 
-            using (Process p = new Process())
+            try
             {
-                p.EnableRaisingEvents = true;
-                p.StartInfo.FileName = "ffmpeg.exe";
-                p.StartInfo.Arguments = "-y -i \"" + path + "\" -c copy -f null /dev/null";
-                p.StartInfo.WorkingDirectory = "";
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.RedirectStandardError = true;
-                p.Start();
-
-                string readStr = "";
-
-                while ((readStr = p.StandardError.ReadLine()) != null)
+                using (Process p = new Process())
                 {
-                    long sz = ParseSize(readStr);
-                    if (sz >= 0)
+                    p.EnableRaisingEvents = true;
+                    p.StartInfo.FileName = "ffmpeg.exe";
+                    p.StartInfo.Arguments = "-y -i \"" + path + "\" -c copy -f null /dev/null";
+                    p.StartInfo.WorkingDirectory = "";
+                    p.StartInfo.CreateNoWindow = true;
+                    p.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
+                    p.StartInfo.RedirectStandardOutput = true;
+                    p.StartInfo.RedirectStandardError = true;
+                    p.Start();
+
+                    string readStr = "";
+
+                    while ((readStr = p.StandardError.ReadLine()) != null)
                     {
-                        size = sz;
+                        long sz = ParseSize(readStr);
+                        if (sz >= 0)
+                        {
+                            size = sz;
+                        }
+
+                        int sec = ParseDurationSeconds(readStr);
+                        if (sec >= 0)
+                        {
+                            duration_seconds = sec;
+                        }
+
+                        if (size >= 0 && duration_seconds >= 0)
+                        {
+                            break;
+                        }
+                        System.Threading.Thread.Sleep(10);
                     }
 
-                    int sec = ParseDurationSeconds(readStr);
-                    if (sec >= 0)
-                    {
-                        duration_seconds = sec;
-                    }
-
-                    if (size >= 0 && duration_seconds >= 0)
-                    {
-                        break;
-                    }
-                    System.Threading.Thread.Sleep(10);
+                    return new Tuple<long, int>(size, duration_seconds);
                 }
-
-                return new Tuple<long, int>(size, duration_seconds);
+            }
+            catch (Exception e)
+            {
+                Loger.Write(TAG + "GetSizeDurationSec : " + e.ToString());
+                return new Tuple<long, int>(-1, -1);
             }
         }
 
