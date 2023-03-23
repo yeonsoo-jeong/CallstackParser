@@ -135,9 +135,21 @@ namespace ShakaCallstackParser
         private void OnSSIMCalculatorProgressChanged(int percentage)
         {
             double job_num = analyze_jobs_.Count();
-            int base_percentage = (int)(current_index_ / job_num * 100);
-            double scale_factor = 1.0f / job_num;
-            int actual_percentage = (int)(percentage * scale_factor + base_percentage);
+
+            // actual_percentage = base_percentage + processed_percentage + current_processing_percentage
+            // 1. base_percentage
+            int base_percentage = 30;
+
+            // 2. processed_percentage
+            int job_proportion = 100 - base_percentage;
+            double job_proportion_factor = job_proportion / 100.0f;
+            int processed_percentage = (int)(current_index_ / job_num * job_proportion);
+
+            // 3. current_processing_percentage
+            double scale_factor = 1.0f / job_num * job_proportion_factor;
+            int current_processing_percentage = (int)(percentage * scale_factor);
+
+            int actual_percentage = (int)(base_percentage + processed_percentage + current_processing_percentage);
             callbacks_.progress_changed(parent_id_, actual_percentage);
         }
 

@@ -154,6 +154,10 @@ namespace ShakaCallstackParser.ViewModel
 
         public void Start()
         {
+            if (EncodeManager.FC_DEBUG) {
+                Loger.Write(TAG + "[DEBUG] Start : pos 1");
+            }
+            
             EncModel.BtnEncCancelEnabled = false;
 
             enc_item_manager_.Refresh();
@@ -170,8 +174,11 @@ namespace ShakaCallstackParser.ViewModel
                 Dispatcher.CurrentDispatcher.Invoke(() =>
                 {
                     EncModel.BtnEncCancelEnabled = true;
+                    Loger.Write(TAG + "[DEBUG] Start : pos 3");
                 });
             });
+
+            Loger.Write(TAG + "[DEBUG] Start : pos 2");
         }
 
         public void Cancel()

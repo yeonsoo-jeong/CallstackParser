@@ -42,7 +42,6 @@ namespace ShakaCallstackParser
             {
                 int input_minute = input_duration / 60;
                 int analyze_num = Math.Min(input_minute / 10 + 2, 5);
-
                 int base_sec = (input_duration - analyze_duration) / 2;
                 double denominator = analyze_num + 1;
                 for (int i = 1; i <= analyze_num; i++)
@@ -50,6 +49,23 @@ namespace ShakaCallstackParser
                     int start = (int)(base_sec * (i / denominator));
                     result.Add(new TimePair(start, analyze_duration));
                 }
+
+                #region reducing analyze_num
+                // int increased_duration = 30;
+                // int input_minute = input_duration / 60;
+                // int analyze_num = Math.Min(input_minute / 20 + 2, 3);
+
+                // int base_sec = (input_duration - increased_duration) / 4;
+                // base_sec = Math.Min(base_sec, 60*10);   // 10 minute
+                // double denominator = analyze_num + 1;
+                // for (int i = 1; i <= analyze_num; i++)
+                // {
+                //     int start = (int)(base_sec * (i / denominator));
+                //     result.Add(new TimePair(start, increased_duration));
+                // }
+                #endregion
+
+
             }
             return result;
         }

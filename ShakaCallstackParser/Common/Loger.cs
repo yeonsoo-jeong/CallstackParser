@@ -19,6 +19,23 @@ namespace YsCommon
 
         public static void Write(string msg)
         {
+            int count = 0;
+            while (count++ < 10)
+            {
+                try
+                {
+                    using (var writer = new StreamWriter(kLogPath, append: true))
+                    {
+                        writer.WriteLine(msg);
+                    }
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Loger.Write(TAG + "Write : tried to " + count);
+                }
+            }
+
             try
             {
                 using (var writer = new StreamWriter(kLogPath, append: true))
@@ -29,7 +46,7 @@ namespace YsCommon
             catch (Exception e)
             {
                 Loger.Write(TAG + "Write : " + e.ToString());
-            }
+            }            
         }
     }
 }

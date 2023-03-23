@@ -13,6 +13,7 @@ namespace ShakaCallstackParser
     class EncodeManager
     {
         const string TAG = "EncodeManager.cs : ";
+        public const bool FC_DEBUG = true;
 
         public enum EncodeCallbackStatus
         {
@@ -75,8 +76,21 @@ namespace ShakaCallstackParser
 
         public void Start(string out_directory)
         {
-            if (enc_item_manager_.GetToEncodeItemsNum() <= 0 || is_encoding_)
+            if (EncodeManager.FC_DEBUG) {
+                Loger.Write(TAG + "[DEBUG] Start : pos 1");
+            }
+
+            if (is_encoding_) 
             {
+                callbacks_.encode_status_changed(-1, EncodeCallbackStatus.AnalyzeFailed, "Error: Program Error. Please Restart Program.");
+                return;
+            }
+
+            if (enc_item_manager_.GetToEncodeItemsNum() <= 0)
+            {
+                if (EncodeManager.FC_DEBUG) {
+                    Loger.Write(TAG + "[DEBUG] Start : pos 2");
+                }
                 return;
             }
 
@@ -93,6 +107,11 @@ namespace ShakaCallstackParser
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
+
+                if (EncodeManager.FC_DEBUG) {
+                    Loger.Write(TAG + "[DEBUG] Start : pos 3");
+                }
+
                 result = Analyze(id, path, thread_num, out int crf, out long expect_size);
                 stopwatch.Stop();
                 Loger.Write(TAG + "Start : Analyzation Time=" + stopwatch.ElapsedMilliseconds / 1000 + "s");
@@ -219,7 +238,9 @@ namespace ShakaCallstackParser
                     callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFailed, "Unexpected error occured.(" + return_code + ")");
                     return Result.fail_continue;
             }
+            Loger.Write(TAG + "Encode : ssim=" + ssim);
             callbacks_.encode_status_changed(id, EncodeCallbackStatus.EncodeFinished, "");
+            
 
             return Result.success;
         }
