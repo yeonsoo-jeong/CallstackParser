@@ -151,7 +151,7 @@ namespace ShakaCallstackParser
                 analyze_items.Add(new AnalyzeItem("0:v:0", time_list[0].start_time, time_list[0].duration));
             }
 
-            ret_option = "-y -vsync passthrough -threads " + thread_num + " -i \"" + path + "\"" + filter_option + " -an -sn";
+            ret_option = "-y -vsync passthrough -i \"" + path + "\"" + filter_option + " -threads " + thread_num + " -an -sn";
             for (int i = 0; i < analyze_items.Count; i++)
             {
                 string _inp_tag = analyze_items[i].inp_tag;
@@ -165,10 +165,13 @@ namespace ShakaCallstackParser
 
         public Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
+            is_canceled_ = false;
             double ssim = 0;
             long size = 0;
             int count = 0;
             string command = MakeOption(path, thread_num, crf, time_list);
+
+            Loger.Write(TAG + "CalculateAverageSSIM : command=" + command);
 
             try
             {

@@ -25,8 +25,9 @@ namespace ShakaCallstackParser
 
         public static string[] kCpuUsageItems =
         {
-            "Full",
-            "Half"
+            "100%",
+            "75%",
+            "50%"
         };
         
         public EncWindow()

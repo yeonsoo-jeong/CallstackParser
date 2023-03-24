@@ -67,9 +67,13 @@ namespace ShakaCallstackParser
 
         public static int GetCoreNumFromCpuUsage(string cpu_usage)
         {
-            if (cpu_usage == "Half")
+            if (cpu_usage == "50%")
             {
                 return Environment.ProcessorCount / 2;
+            } 
+            else if (cpu_usage == "75%")
+            {
+                return (int)(Environment.ProcessorCount * 0.75);
             }
             else
             {
