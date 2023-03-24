@@ -27,6 +27,19 @@ namespace ShakaCallstackParser
         }
         Callbacks callbacks_;
 
+        public class AnalyzeItem
+        {
+            public AnalyzeItem(string _inp_tag, int _start_time, int _duration)
+            {
+                inp_tag = _inp_tag;
+                start_time = _start_time;
+                duration = _duration;
+            }
+            public string inp_tag;
+            public int start_time;
+            public int duration;
+        }
+
         const string TAG = "SSIMCalculator.cs : ";
 
         Process enc_process_ = null;
@@ -35,55 +48,6 @@ namespace ShakaCallstackParser
         public SSIMCalculator(Callbacks callback)
         {
             callbacks_ = callback;
-        }
-
-        public Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
-        {
-            is_canceled_ = false;
-            double ret = -1;
-            double ssim_sum = 0;
-            int count = 0;
-            long size = 0;
-            int size_sec = 0;
-            for (int i = 0; i < time_list.Count(); i++)
-            {
-                Tuple<double, long> result = CalculateSSIM(path, thread_num, crf, time_list[i].start_time, time_list[i].duration);
-                if (is_canceled_)
-                {
-                    return new Tuple<double, int, long>(-1, -1, -1);
-                }
-
-                double ssim_result = result.Item1;
-                long sz = result.Item2;
-                if (ssim_result <= 0 || sz <= 0)
-                {
-                    return new Tuple<double, int, long>(-1, -1, -1);
-                }
-
-                {
-                    // Log
-                    string name = Path.GetFileName(path);
-                    string msg = TAG + "name=" + name + ", crf=" + crf + ", start_time=" +
-                        time_list[i].start_time + ", duration=" + time_list[i].duration + ", ssim=" + Math.Round(ssim_result, 4) + ", size=" + sz;
-                    Loger.Write(msg);
-                }
-
-                ssim_sum += ssim_result;
-                size += sz;
-                size_sec += time_list[i].duration;
-
-                count++;
-
-                int percentage = (int)((i + 1) / (double)(time_list.Count()+1) * 100);
-                callbacks_.progress_changed(percentage);
-            }
-
-            if (count > 0)
-            {
-                ret = ssim_sum / count;
-            }
-
-            return new Tuple<double, int, long>(ret, size_sec, size);
         }
 
         public void OnEncodeCanceled()
@@ -122,16 +86,89 @@ namespace ShakaCallstackParser
             }
         }
 
-        private Tuple<double, long> CalculateSSIM(string path, int thread_num, int crf, int start_time, int duration)
+        private string MakeOption(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
         {
-            double ssim = -1;
-            long size = 0;
-
+            bool is_use_filter = false;
+            bool is_interlace = false;
             string interlace_option = "";
-            if (MediaInfoUtil.IsInterlaced(path))
+            string split_option = "";
+            string filter_option = "";
+            string ret_option = "";
+            string inp_tag = "[0:v:0]";
+            int items_num = time_list.Count;
+            List<AnalyzeItem> analyze_items = new List<AnalyzeItem>();
+            
+            if (items_num < 1)
             {
-                interlace_option = " -filter_complex \"[0:v:0]yadif=0:-1:0[v]\" -map [v]";
+                Loger.Write(TAG + "MakeOption : time list is empty.");
+                return "";
             }
+            is_interlace = MediaInfoUtil.IsInterlaced(path);
+
+            if (is_interlace)
+            {
+                is_use_filter = true;
+                interlace_option = "\"" + inp_tag + "yadif=0:-1:0[v]";
+                inp_tag = "[v]";
+                if (items_num == 1)
+                {
+                    analyze_items.Add(new AnalyzeItem("[v]", time_list[0].start_time, time_list[0].duration));
+                }
+            }
+
+            if (items_num > 1)
+            {
+                is_use_filter = true;
+                if (is_interlace)
+                {
+                    split_option = ";";
+                }
+                else
+                {
+                    split_option = "\"";
+                }
+                split_option += inp_tag + "split=outputs=" + items_num;
+
+                for (int i = 0; i < items_num; i++)
+                {
+                    string tag = "[v" + i + "]";
+                    split_option += tag;
+                    analyze_items.Add(new AnalyzeItem(tag, time_list[i].start_time, time_list[i].duration));
+                }
+            }
+
+            if (is_use_filter)
+            {
+                filter_option = " -filter_complex " + interlace_option + split_option + "\"";
+            }
+            else
+            {
+                if (analyze_items.Count != 0)
+                {
+                    Loger.Write(TAG + "MakeOption : No filter used, but analyze_items.Count is not zero. count=" + analyze_items.Count);
+                    return "";
+                }
+                analyze_items.Add(new AnalyzeItem("0:v:0", time_list[0].start_time, time_list[0].duration));
+            }
+
+            ret_option = "-y -vsync passthrough -threads " + thread_num + " -i \"" + path + "\"" + filter_option + " -an -sn";
+            for (int i = 0; i < analyze_items.Count; i++)
+            {
+                string _inp_tag = analyze_items[i].inp_tag;
+                int _start = analyze_items[i].start_time;
+                int _duration = analyze_items[i].duration;
+                ret_option += " -map " + _inp_tag + " -ss " + _start + " -t " + _duration + " -crf " + crf + " -c:v h264 -ssim 1 -f null /dev/null";
+            }
+
+            return ret_option;
+        }
+
+        public Tuple<double, int, long> CalculateAverageSSIM(string path, int thread_num, int crf, List<AnalyzeTimeSelector.TimePair> time_list)
+        {
+            double ssim = 0;
+            long size = 0;
+            int count = 0;
+            string command = MakeOption(path, thread_num, crf, time_list);
 
             try
             {
@@ -139,7 +176,7 @@ namespace ShakaCallstackParser
                 {
                     enc_process_.EnableRaisingEvents = true;
                     enc_process_.StartInfo.FileName = "ffmpeg.exe";
-                    enc_process_.StartInfo.Arguments = "-y -vsync passthrough -threads " + thread_num + " -i \"" + path + "\"" + interlace_option + " -an -sn -c:v h264 -crf " + crf + " -ss " + start_time + " -t " + duration + " -ssim 1 -f null /dev/null";
+                    enc_process_.StartInfo.Arguments = command;
                     enc_process_.StartInfo.WorkingDirectory = "";
                     enc_process_.StartInfo.CreateNoWindow = true;
                     enc_process_.StartInfo.UseShellExecute = false;    // CreateNoWindow(true)가 적용되려면 반드시 false이어야 함
@@ -152,7 +189,7 @@ namespace ShakaCallstackParser
                     {
                         if (is_canceled_)
                         {
-                            break;
+                            return new Tuple<double, int, long>(0, 0, 0);
                         }
 
                         long sz = FFmpegUtil.ParseSize(readStr);
@@ -164,8 +201,15 @@ namespace ShakaCallstackParser
                         double result = FFmpegUtil.ParseSSIM(readStr);
                         if (result >= 0)
                         {
-                            ssim = result;
-                            break;
+                            ssim += result;
+                            {
+                                // Log
+                                string name = Path.GetFileName(path);
+                                string msg = TAG + " CalculateAverageSSIM : name=" + name + ", crf=" + crf + ", start_time=" +
+                                    time_list[count].start_time + ", duration=" + time_list[count].duration + ", ssim=" + Math.Round(result, 4);
+                                Loger.Write(msg);
+                            }                            
+                            count++;
                         }
                         System.Threading.Thread.Sleep(10);
                     }
@@ -173,11 +217,28 @@ namespace ShakaCallstackParser
             }
             catch (Exception e)
             {
-                Loger.Write(TAG + "CalculateSSIM : " + e.ToString());
-                return new Tuple<double, long>(-1, -1);
+                Loger.Write(TAG + "CalculateAverageSSIM : " + e.ToString());
+                return new Tuple<double, int, long>(0, 0, 0);
             }
 
-            return new Tuple<double, long>(ssim, size);
+            if (ssim <= 0 || size <= 0)
+            {
+                return new Tuple<double, int, long>(0, 0, 0);
+            }            
+
+            if (count > 0)
+            {
+                ssim /= (double)count;
+            }
+
+            int size_second = 0;
+            for (int i = 0; i < time_list.Count; i++)
+            {
+                size_second += time_list[i].duration;
+            }
+            // callbacks_.progress_changed(100);
+            
+            return new Tuple<double, int, long>(ssim, size_second, size);
         }
     }
 }

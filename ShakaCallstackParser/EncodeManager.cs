@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using YsCommon;
 using ShakaCallstackParser.Model;
 
+// Todo.
+// 1. cpu_usage : 75%
+
 namespace ShakaCallstackParser
 {
     class EncodeManager

@@ -32,6 +32,8 @@ namespace ShakaCallstackParser
         private const double kTargetSSIMRangeMax = 0.9875;
         private const double kTargetSSIMGapLimit = 0.0030;
 
+        private const int kBaseProgressPercentage = 20;
+
         SSIMCalculator ssim_calculator_;
 
         List<AnalyzeJob> analyze_jobs_;
@@ -107,14 +109,14 @@ namespace ShakaCallstackParser
             long result_size = result.Item3;
             expect_size = GetExpectedSize(inp_seconds, result_seconds, result_size);
             Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] selected crf=" + crf + ", input_size=" + inp_size + "K, expected_size=" + expect_size + "K, ratio=" + Math.Round(expect_size / (float)inp_size, 2));
+            if (crf <= 0)
+            {
+                return AnalyzerResult.fail;
+            }
             if (inp_size <= expect_size)
             {
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + "K, expected_size=" + expect_size + "K");
                 return AnalyzerResult.size_over;
-            }
-            if (crf < 0)
-            {
-                return AnalyzerResult.fail;
             }
 
             return AnalyzerResult.success;
@@ -138,7 +140,7 @@ namespace ShakaCallstackParser
 
             // actual_percentage = base_percentage + processed_percentage + current_processing_percentage
             // 1. base_percentage
-            int base_percentage = 30;
+            int base_percentage = kBaseProgressPercentage;
 
             // 2. processed_percentage
             int job_proportion = 100 - base_percentage;
@@ -160,6 +162,7 @@ namespace ShakaCallstackParser
             long result_size = -1;
             current_index_ = 0;
             ref List<AnalyzeJob> jobs = ref analyze_jobs_;
+            callbacks_.progress_changed(parent_id_, kBaseProgressPercentage);
             while (jobs.Count() > current_index_)
             {
                 AnalyzeJob job = jobs[current_index_];
@@ -169,7 +172,7 @@ namespace ShakaCallstackParser
                 result_size = tuple.Item3;
                 Loger.Write(TAG + "AnalyzeJobs : size_sum=" + result_size + ", size_second=" + result_seconds + ", avg_ssim=" + Math.Round(avg_ssim, 4));
 
-                if (is_canceled_ || avg_ssim < 0)
+                if (is_canceled_ || avg_ssim <= 0)
                 {
                     break;
                 }
@@ -205,8 +208,9 @@ namespace ShakaCallstackParser
                     Loger.Write(TAG + "AnalyzeJobs : ssim gap is over. skip next 1 state. gap = " + Math.Round((kTargetSSIMRangeMin - avg_ssim), 4));
                 }
 
-                int percentage = (int)((double)current_index_ / jobs.Count() * 100.0f);
-                callbacks_.progress_changed(parent_id_, percentage);
+                // int percentage = (int)((double)current_index_ / jobs.Count() * 100.0f);
+                // callbacks_.progress_changed(parent_id_, percentage);
+                OnSSIMCalculatorProgressChanged(0);
             }
             
             return new Tuple<int, int, long>(result_crf, result_seconds, result_size);

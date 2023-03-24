@@ -64,8 +64,6 @@ namespace ShakaCallstackParser
                 //     result.Add(new TimePair(start, increased_duration));
                 // }
                 #endregion
-
-
             }
             return result;
         }
