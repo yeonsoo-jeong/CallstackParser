@@ -113,7 +113,7 @@ namespace ShakaCallstackParser
             {
                 return AnalyzerResult.fail;
             }
-            if (inp_size <= expect_size)
+            if (inp_size <= (expect_size * 0.8))
             {
                 Loger.Write(TAG + "Analyze : [" + Path.GetFileName(path) + "] file is not expected to decrease in size. input_size=" + inp_size + "K, expected_size=" + expect_size + "K");
                 return AnalyzerResult.size_over;
