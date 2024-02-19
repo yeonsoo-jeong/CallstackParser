@@ -51,7 +51,12 @@ namespace YsCommon
                         }
                     }
 
-                    process.WaitForExit();
+                    int millsec = 2000;
+                    bool is_exit = process.WaitForExit(millsec);
+                    if (!is_exit)
+                    {
+                        process.Kill();
+                    }
                     result_code = process.ExitCode;
                 }
             }
